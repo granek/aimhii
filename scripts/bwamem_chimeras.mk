@@ -1,29 +1,75 @@
 # make all  -l 16 -j # for parallel make
 STAGE_DIR=staging
 SEQ_DIR=seqs
+BWA_OUTDIR=bwa
+
 # PZPNAT_SEQ=ref/pPZP-NATcc_plasmid_100813.fasta
 PZPNAT_SEQ=$(COLLAB)/AlspaughLab/info/pPZP-NATcc.fasta 
 H99_SEQ=$(STAGE_DIR)/cryptococcus_neoformans_grubii_h99_2_contigs.fasta.gz
 MERGED_SEQ=$(SEQ_DIR)/h99_pzpnat.fa
 INDEXBASE=$(basename $(MERGED_SEQ))
 INDEX_FILES=$(addprefix $(INDEXBASE),.bwt .pac .ann .amb .sa)
-FASTQ_DIR=/home/ske5/WHM_1/raw_fastqs
-BWA_OUTDIR=bwa
+RAW_FASTQ_DIR=/home/ske5/WHM_1/raw_fastqs
+FASTQ_DIR= $(RAW_FASTQ_DIR)
+# TRIM_FASTQ_DIR=trim_fastqs
+##----------------------------------------------------------------------
+FINAL_FASTQ_DIR=final_fastqs
+ADAPTER_FASTA=info/illumina_adapter1.fasta
+#--------------------------------------------------
+RAW_FASTQS_FULLPATH := $(wildcard $(RAW_FASTQ_DIR)/*.fastq.gz)
+#--------------------------------------------------
+# /home/ske5/WHM_1/raw_fastqs/SE-WHM1_S1_L001_R1_001.fastq.gz
+# /home/ske5/WHM_1/raw_fastqs/SE-WHM1_S1_L001_R2_001.fastq.gz
+# /home/ske5/WHM_1/raw_fastqs/Undetermined_S0_L001_R1_001.fastq.gz
+# /home/ske5/WHM_1/raw_fastqs/Undetermined_S0_L001_R2_001.fastq.gz
+FASTQS := $(notdir $(RAW_FASTQS_FULLPATH))
+FASTQ_SUFFIX=_001.fastq.gz
+
+TRIM_FASTQS := $(patsubst %$(FASTQ_SUFFIX),$(FINAL_FASTQ_DIR)/%.trim.fastq.gz,$(FASTQS))
+R1_TRIM_FASTQS := $(patsubst %_R1.trim.fastq.gz,%,$(filter %_R1.trim.fastq.gz, $(TRIM_FASTQS)))
+# R1_TRIM_FASTQS := $(patsubst %R1.trim.fastq.gz,%,$(TRIM_FASTQS))
+JOIN_FASTQS := $(addsuffix .un1.fastq.gz , $(R1_TRIM_FASTQS)) $(addsuffix .un2.fastq.gz ,$(R1_TRIM_FASTQS)) $(addsuffix .join.fastq.gz ,$(R1_TRIM_FASTQS))
+UNSRT_BAMS := $(addprefix  $(BWA_OUTDIR)/, $(addsuffix .join.bam,$(notdir $(R1_TRIM_FASTQS))) $(addsuffix .pair.bam,$(notdir $(R1_TRIM_FASTQS))))
+
+
+
+# JOIN_FASTQS := $(addprefix $(TRIM_FASTQS),.un1.fastq.gz .un2.fastq.gz .join.fastq.gz)
+
+
+# # TRIM_FASTQS := $(addprefix $(FINAL_FASTQ_DIR)/,$(FASTQS))
+# #--------------------------------------------------
+# TOPHAT_BASE_DIR=thout
+
+# FINAL_BAMS := $(patsubst %$(FASTQ_SUFFIX),$(TOPHAT_BASE_DIR)/%/accepted_hits.bam,$(FASTQS))
+# FINAL_BAIS := $(addsuffix .bai,$(FINAL_BAMS))
+# ##----------------------------------------------------------------------
+
+
+
 NUMTHREADS=12
 MINSEEDLEN=10
 # BWA_OUTBAM=$(BWA_OUTDIR)/
 
-.PRECIOUS: %.bam
+.PRECIOUS: %.bam %.un1.fastq.gz %.un2.fastq.gz %.join.fastq.gz %.bwt %.pac %.ann %.amb %.sa
 
 dir_guard=@mkdir -p $(@D)
 
 # all : test $(TOPHAT_BASE_DIR)/accepted_hits.bam $(STAGE_DIR)/ppzp-nat_reads.bam $(STAGE_DIR)/fusion_chrom_counts.txt
 # all: $(BWA_OUTDIR)/Undetermined_S0.bam $(BWA_OUTDIR)/SE-WHM1_S1.bam
-all: $(BWA_OUTDIR)/Undetermined_S0.unsrt.bam
+all: $(TRIM_FASTQS) $(JOIN_FASTQS) $(UNSRT_BAMS) # $(BWA_OUTDIR)/Undetermined_S0.unsrt.bam 
 
 test :
-	echo $(INDEXBASE)
-	echo $(INDEX_FILES)
+	@echo "-----INDEXBASE-----"
+	@echo $(INDEXBASE)
+	@echo "-----INDEX_FILES-----"
+	@echo $(INDEX_FILES)
+	@echo "-----JOIN_FASTQS-----"
+	@echo $(JOIN_FASTQS)
+	@echo "-----R1_TRIM_FASTQS-----"
+	@echo $(R1_TRIM_FASTQS)
+	@echo "-----UNSRT_BAMS-----"
+	@echo $(UNSRT_BAMS)
+
 
 # #===============================================================================
 # # Download and merge reference genomes 
@@ -51,6 +97,27 @@ $(H99_SEQ) :
 , := ,
 space :=
 space +=
+
+
+
+$(BWA_OUTDIR)/%.join.bam :  $(FINAL_FASTQ_DIR)/%.join.fastq.gz $(INDEX_FILES)
+	echo $^
+	$(dir_guard)
+	# mv: cannot stat `bwa/Undetermined_S0_L001.join_TMP.bam': No such file or directory
+	$(eval TMPOUT := $(basename $@)_TMP)
+	bwa mem -t $(NUMTHREADS) -k $(MINSEEDLEN) $(INDEXBASE) \
+	$(word 1,$^) | samtools view -Sb - > $(TMPOUT)
+	mv $(TMPOUT) $@
+
+$(BWA_OUTDIR)/%.pair.bam :  $(FINAL_FASTQ_DIR)/%.un1.fastq.gz $(FINAL_FASTQ_DIR)/%.un2.fastq.gz $(INDEX_FILES)
+	echo $^
+	$(dir_guard)
+	$(eval TMPOUT := $(basename $@)_TMP)
+	bwa mem -t $(NUMTHREADS) -k $(MINSEEDLEN) $(INDEXBASE) \
+	$(word 1,$^) $(word 2,$^) | samtools view -Sb - > $(TMPOUT)
+	mv $(TMPOUT) $@
+
+#----------------------------------------
 
 $(BWA_OUTDIR)/%.bam :  $(FASTQ_DIR)/%_L001_R1_001.fastq.gz $(FASTQ_DIR)/%_L001_R2_001.fastq.gz $(INDEX_FILES)
 	echo $^
@@ -120,4 +187,20 @@ $(STAGE_DIR)/%_junctions.csv $(STAGE_DIR)/%_fusionreads.csv : %/accepted_hits.ba
 # bwa mem rand_seqs random_reads_3.fastq | samtools view -Sb - > rand_3.bam
 # python2.7 /Users/josh/Documents/BioinfCollabs/scripts/extract_bwa_chimeras.py rand_3.bam 
 # python2.7 /Users/josh/Documents/BioinfCollabs/scripts/extract_bwa_chimeras.py rand_3.bam | egrep "prime|junc"
+#--------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------
+# Trim adapters
+$(FINAL_FASTQ_DIR)/%_R1.trim.fastq.gz $(FINAL_FASTQ_DIR)/%_R2.trim.fastq.gz : $(ADAPTER_FASTA) $(RAW_FASTQ_DIR)/%_R1$(FASTQ_SUFFIX) $(RAW_FASTQ_DIR)/%_R2$(FASTQ_SUFFIX)
+	$(dir_guard)
+	fastq-mcf $< $(word 2,$^) $(word 3,$^) -o $(FINAL_FASTQ_DIR)/$*_R1.tmp.gz -o $(FINAL_FASTQ_DIR)/$*_R2.tmp.gz
+	mv $(FINAL_FASTQ_DIR)/$*_R1.tmp.gz $(FINAL_FASTQ_DIR)/$*_R1.trim.fastq.gz
+	mv $(FINAL_FASTQ_DIR)/$*_R2.tmp.gz $(FINAL_FASTQ_DIR)/$*_R2.trim.fastq.gz
+#--------------------------------------------------------------------------------
+# End join pairs
+$(FINAL_FASTQ_DIR)/%.un1.fastq.gz $(FINAL_FASTQ_DIR)/%.un2.fastq.gz $(FINAL_FASTQ_DIR)/%.join.fastq.gz : $(FINAL_FASTQ_DIR)/%_R1.trim.fastq.gz $(FINAL_FASTQ_DIR)/%_R2.trim.fastq.gz
+	$(dir_guard)
+	fastq-join $(word 1,$^) $(word 2,$^) -o $(FINAL_FASTQ_DIR)/$*.%.tmp.gz
+	mv $(FINAL_FASTQ_DIR)/$*.un1.tmp.gz $(FINAL_FASTQ_DIR)/$*.un1.fastq.gz
+	mv $(FINAL_FASTQ_DIR)/$*.un2.tmp.gz $(FINAL_FASTQ_DIR)/$*.un2.fastq.gz
+	mv $(FINAL_FASTQ_DIR)/$*.join.tmp.gz $(FINAL_FASTQ_DIR)/$*.join.fastq.gz
 #--------------------------------------------------------------------------------

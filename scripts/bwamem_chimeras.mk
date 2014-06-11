@@ -2,6 +2,7 @@
 STAGE_DIR=staging
 SEQ_DIR=seqs
 BWA_OUTDIR=bwa
+RESULTS_DIR=results
 
 # PZPNAT_SEQ=ref/pPZP-NATcc_plasmid_100813.fasta
 PZPNAT_SEQ=$(COLLAB)/AlspaughLab/info/pPZP-NATcc.fasta 
@@ -30,9 +31,18 @@ R1_TRIM_FASTQS := $(patsubst %_R1.trim.fastq.gz,%,$(filter %_R1.trim.fastq.gz, $
 # R1_TRIM_FASTQS := $(patsubst %R1.trim.fastq.gz,%,$(TRIM_FASTQS))
 JOIN_FASTQS := $(addsuffix .un1.fastq.gz , $(R1_TRIM_FASTQS)) $(addsuffix .un2.fastq.gz ,$(R1_TRIM_FASTQS)) $(addsuffix .join.fastq.gz ,$(R1_TRIM_FASTQS))
 UNSRT_BAMS := $(addprefix  $(BWA_OUTDIR)/, $(addsuffix .join.bam,$(notdir $(R1_TRIM_FASTQS))) $(addsuffix .pair.bam,$(notdir $(R1_TRIM_FASTQS))))
-
-
-
+PZP_BAMS := $(patsubst %.bam,%.PZP.bam,$(UNSRT_BAMS))
+SA_BAMS := $(patsubst %.bam,%.SA.bam,$(UNSRT_BAMS))
+PZP_SA_BAMS := $(patsubst %.bam,%.PZP_SA.bam,$(UNSRT_BAMS))
+PZP_SA_SORT_BAMS := $(patsubst %.bam,%.sort.bam,$(PZP_SA_BAMS))
+PZP_SA_SORT_BAIS := $(patsubst %.bam,%.bam.bai,$(PZP_SA_SORT_BAMS))
+PZP_MERGE = $(BWA_OUTDIR)/SE-WHM1.PZP.merge.bam
+PZP_SA_MERGE = $(BWA_OUTDIR)/SE-WHM1.PZP_SA.merge.bam
+PZP_MERGE_SORT = $(BWA_OUTDIR)/SE-WHM1.PZP.merge.sort.bam
+PZP_SA_MERGE_SORT = $(BWA_OUTDIR)/SE-WHM1.PZP_SA.merge.sort.bam
+SA_MERGE_SORT = $(BWA_OUTDIR)/SE-WHM1.SA.merge.sort.bam
+PZP_SA_MERGE_JUNCS = $(RESULTS_DIR)/SE-WHM1.PZP_SA.merge.junc
+MERGE_JUNCS = $(RESULTS_DIR)/SE-WHM1.merge.junc
 # JOIN_FASTQS := $(addprefix $(TRIM_FASTQS),.un1.fastq.gz .un2.fastq.gz .join.fastq.gz)
 
 
@@ -56,7 +66,7 @@ dir_guard=@mkdir -p $(@D)
 
 # all : test $(TOPHAT_BASE_DIR)/accepted_hits.bam $(STAGE_DIR)/ppzp-nat_reads.bam $(STAGE_DIR)/fusion_chrom_counts.txt
 # all: $(BWA_OUTDIR)/Undetermined_S0.bam $(BWA_OUTDIR)/SE-WHM1_S1.bam
-all: $(TRIM_FASTQS) $(JOIN_FASTQS) $(UNSRT_BAMS) # $(BWA_OUTDIR)/Undetermined_S0.unsrt.bam 
+all: $(TRIM_FASTQS) $(JOIN_FASTQS) $(UNSRT_BAMS) $(PZP_MERGE_SORT) $(PZP_SA_MERGE_SORT) $(PZP_SA_MERGE_JUNCS) $(MERGE_JUNCS) $(SA_BAMS) $(SA_MERGE_SORT) # $(BWA_OUTDIR)/Undetermined_S0.unsrt.bam 
 
 test :
 	@echo "-----INDEXBASE-----"
@@ -103,7 +113,6 @@ space +=
 $(BWA_OUTDIR)/%.join.bam :  $(FINAL_FASTQ_DIR)/%.join.fastq.gz $(INDEX_FILES)
 	echo $^
 	$(dir_guard)
-	# mv: cannot stat `bwa/Undetermined_S0_L001.join_TMP.bam': No such file or directory
 	$(eval TMPOUT := $(basename $@)_TMP)
 	bwa mem -t $(NUMTHREADS) -k $(MINSEEDLEN) $(INDEXBASE) \
 	$(word 1,$^) | samtools view -Sb - > $(TMPOUT)
@@ -117,6 +126,46 @@ $(BWA_OUTDIR)/%.pair.bam :  $(FINAL_FASTQ_DIR)/%.un1.fastq.gz $(FINAL_FASTQ_DIR)
 	$(word 1,$^) $(word 2,$^) | samtools view -Sb - > $(TMPOUT)
 	mv $(TMPOUT) $@
 
+%.SA.sam : %.bam
+	$(dir_guard)
+	samtools view -H $< > $@.tmp
+	samtools view $< | grep "SA:Z" >> $@.tmp
+	mv $@.tmp $@
+
+%.PZP_SA.sam : %.PZP.bam
+	$(dir_guard)
+	samtools view -H $< > $@.tmp
+	samtools view $< | grep "SA:Z" >> $@.tmp
+	mv $@.tmp $@
+
+%.PZP.sam : %.bam
+	$(dir_guard)
+	samtools view -H $< > $@.tmp
+	samtools view $< | grep "PZP" >> $@.tmp
+	mv $@.tmp $@
+
+%.bam : %.sam
+	$(dir_guard)
+	samtools view -Sb > $@.tmp
+	mv $@.tmp $@
+
+%.sort.bam : %.bam
+	$(dir_guard)
+	$(eval TMPOUT := $(basename $@)_TMP)
+	samtools sort $<  $(TMPOUT)
+	mv $(TMPOUT).bam $@
+
+%.bam.bai : %.bam
+	samtools index $<
+
+$(PZP_SA_MERGE) : $(PZP_SA_BAMS)
+	samtools merge $@ $^
+
+$(PZP_MERGE) : $(PZP_BAMS)
+	samtools merge $@ $^
+
+$(SA_MERGE) : $(SA_BAMS)
+	samtools merge $@ $^
 #----------------------------------------
 
 $(BWA_OUTDIR)/%.bam :  $(FASTQ_DIR)/%_L001_R1_001.fastq.gz $(FASTQ_DIR)/%_L001_R2_001.fastq.gz $(INDEX_FILES)
@@ -160,7 +209,7 @@ $(STAGE_DIR)/fusion_chrom_counts.txt : %/accepted_hits.bam
 # Find fusion read junctions
 #-----------
 $(STAGE_DIR)/%_junctions.csv $(STAGE_DIR)/%_fusionreads.csv : %/accepted_hits.bam
-	python2.7 $SCRIPTS/extract_reads_and_fusions.py $<  DUMMY --junction $*_junctions.csv --fusionreads $*_fusionreads.csv > /dev/null
+	python2.7 $(SCRIPTS)/extract_reads_and_fusions.py $<  DUMMY --junction $*_junctions.csv --fusionreads $*_fusionreads.csv > /dev/null
 
 # # Cleanup
 # #-----------
@@ -204,3 +253,9 @@ $(FINAL_FASTQ_DIR)/%.un1.fastq.gz $(FINAL_FASTQ_DIR)/%.un2.fastq.gz $(FINAL_FAST
 	mv $(FINAL_FASTQ_DIR)/$*.un2.tmp.gz $(FINAL_FASTQ_DIR)/$*.un2.fastq.gz
 	mv $(FINAL_FASTQ_DIR)/$*.join.tmp.gz $(FINAL_FASTQ_DIR)/$*.join.fastq.gz
 #--------------------------------------------------------------------------------
+## python2.7 /home/josh/collabs/scripts/extract_bwa_chimeras.py Undetermined_S0_L001.pair.bam --junction Undetermined_S0_L001.pair.junc --fusionreads Undetermined_S0_L001.pair.fusread
+#-----------
+$(RESULTS_DIR)/%.junc $(STAGE_DIR)/%.fusread : $(BWA_OUTDIR)/%.bam
+	$(dir_guard)
+	# python2.7 $SCRIPTS/extract_reads_and_fusions.py $<  DUMMY --junction $*_junctions.csv --fusionreads $*_fusionreads.csv > /dev/null
+	python2.7 $(SCRIPTS)/extract_bwa_chimeras.py $< --junction $(dir $@)/$*.junc --fusionreads $(dir $@)/$*.fusread

@@ -4,6 +4,7 @@ import sys
 import pysam
 import re
 import os
+from Bio import SeqIO
 
 cigar_re = re.compile("(d+)([mM])(d+)[F](d+)[mM]")
 
@@ -23,7 +24,8 @@ def current_work():
 
 def main():
     parser = argparse.ArgumentParser(description="Extract all reads in SAM_FILE that map to REF_NAME, or have pair that maps to it (including fusion matches)")
-    parser.add_argument("SAM_FILE", type=file, help="")
+    parser.add_argument("SAM_FILE", type=file, help="BAM/SAM file containing mapped reads")
+    parser.add_argument("--insert", type=file, help="The sequence of the inserted DNA fragment.  Used to determine how to organize junctions.")
     # parser.add_argument("REF_NAME", help="Extract all reads w")
     parser.add_argument("--junction", metavar="JUNCTION_FILE",
                         type=argparse.FileType('w'),
@@ -35,6 +37,10 @@ def main():
     # parser.add_argument("--verbose", help="increase output verbosity",action="store_true",default=False)
     # parser.add_argument("--group", help="group reads and output groups to separate FASTQ files.",action="store_true",default=False)
     args = parser.parse_args()
+
+    if args.insert:
+        insert_rec = SeqIO.read(args.insert,"fasta")
+        ChimeraJunction.InsertSeqID = insert_rec.id
 
     junction_list = find_chimeric_reads(args.SAM_FILE.name)
     # find_chimeric_reads_htseq(args.SAM_FILE.name)
@@ -49,7 +55,8 @@ def main():
                                                                  r_chrom, r_junc,
                                                                  junction_count_dict[key])
     if args.fusionreads:
-        for curjunc in sorted(junction_list,key=lambda x: x.junction_tuple):
+        # for curjunc in sorted(junction_list,key=lambda x: x.junction_tuple):
+        for curjunc in sorted(junction_list):
             print >>args.fusionreads, "{0.readname}\t{0.chrom1}:{0.junc1}~{0.chrom2}:{0.junc2}".format(curjunc)
 
 def find_chimeric_reads(sam_filename):
@@ -146,6 +153,7 @@ def parse_samfile_htseq(sam_filename,refname):
     return record_list
 
 class ChimeraJunction:
+    InsertSeqID = None
     def __init__(self,l_part,r_part,qname):
         self.readname = qname
         # self.l_chrom = l_part.rname
@@ -153,25 +161,51 @@ class ChimeraJunction:
         l_chrom = l_part.rname
         r_chrom = r_part.rname
         if (l_part.strand == "-") and (r_part.strand == "-"):
-            l_junc = l_part.start_d
-            l_end = l_part.end_d
-            r_junc = r_part.end_d
-            r_end = r_part.start_d
+            l_part.junc = l_part.start_d
+            l_part.end = l_part.end_d
+            r_part.junc = r_part.end_d
+            r_part.end = r_part.start_d
         else:
-            l_junc = l_part.end_d
-            r_junc = r_part.start_d
+            l_part.junc = l_part.end_d
+            r_part.junc = r_part.start_d
+            l_part.end = l_part.start_d
+            r_part.end = r_part.end_d
 
-            l_end = l_part.start_d
-            r_end = r_part.end_d
-
-        if l_part.rname < r_part.rname:
-            self.chrom1, self.junc1, self.first_end = l_chrom, l_junc, l_end
-            self.chrom2, self.junc2, self.second_end = r_chrom, r_junc, r_end
+        if (l_part.rname == ChimeraJunction.InsertSeqID) or (r_part.rname == ChimeraJunction.InsertSeqID) and (l_part.rname != r_part.rname):
+            # Organize in the relative to reference chrom, not insert
+            if l_part.rname == ChimeraJunction.InsertSeqID:
+                self.primary_frag = r_part # ref_part = r_part
+                self.secondary_frag = l_part # insert_part = l_part
+            else:
+                self.primary_frag = l_part # insert_part
+                self.secondary_frag = r_part # ref_part
+            # self.primary_frag = ref_part
+            # self.secondary_frag = insert_part
+        elif l_part.rname < r_part.rname or (l_part.rname == r_part.rname and l_part < r_part):
+            self.primary_frag = l_part
+            self.secondary_frag = r_part
+        elif l_part.rname > r_part.rname or (l_part.rname == r_part.rname and l_part > r_part):
+            self.primary_frag = r_part
+            self.secondary_frag = l_part
         else:
-            self.chrom1, self.junc1, self.first_end = r_chrom, r_junc, r_end
-            self.chrom2, self.junc2, self.second_end = l_chrom, l_junc, l_end
+            raise StandardError
+        
+        if self.primary_frag.junc > self.primary_frag.end:
+            # junction is at right end of ref fragment
+            self.chrom1, self.junc1, self.end1 = self.primary_frag.rname, self.primary_frag.junc, self.primary_frag.end
+            self.chrom2, self.junc2, self.end2 = self.secondary_frag.rname, self.secondary_frag.junc, self.secondary_frag.end
+        else:
+            # junction is at left end of ref fragment
+            self.chrom1, self.junc1, self.end1 = self.secondary_frag.rname, self.secondary_frag.junc, self.secondary_frag.end
+            self.chrom2, self.junc2, self.end2 = self.primary_frag.rname, self.primary_frag.junc, self.primary_frag.end
+        # elif l_part.rname < r_part.rname:
+        #     self.chrom1, self.junc1, self.end1 = l_chrom, l_part.junc, l_part.end
+        #     self.chrom2, self.junc2, self.end2 = r_chrom, r_part.junc, r_part.end
+        # else:
+        #     self.chrom1, self.junc1, self.end1 = r_chrom, r_part.junc, r_part.end
+        #     self.chrom2, self.junc2, self.end2 = l_chrom, l_part.junc, l_part.end
            
-        print "junction: {0.rname}:{2}<->{1.rname}:{3}".format(l_part,r_part,l_junc,r_junc)
+        print "junction: {0.rname}:{0.junc}<->{1.rname}:{1.junc}".format(l_part,r_part)
         # junction_dict.setdefault(((l_chrom, l_junc),(r_chrom, r_junc)),set()).add(aread.qname)
 
     def __str__(self):
@@ -184,41 +218,35 @@ class ChimeraJunction:
     def junction_tuple(self):
         return (self.chrom1, self.junc1),(self.chrom2, self.junc2)
 
-
-
     def __lt__(self,other):
-        if self.chrom1 < other.chrom1:
+        if self.primary_frag.rname < other.primary_frag.rname:
             return True
-        elif self.chrom1 > other.chrom1:
+        elif self.primary_frag.rname > other.primary_frag.rname:
             return False
-        elif self.chrom1 == other.chrom1:
-            if self.chrom2 < other.chrom2:
-                return True
-            elif self.chrom2 > other.chrom2:
-                return False
-            elif self.chrom2 == other.chrom2:
-                if self.junc1 < other.junc1:
-                    return True
-                elif self.junc1 > other.junc1:
-                    return False
-                elif self.junc1 == other.junc1:
-                    if self.junc2 < other.junc2:
-                        return True
-                    elif self.junc2 > other.junc2:
-                        return False
-                    elif self.junc2 == other.junc2:
-                        if self.first_end < other.first_end:
-                            return True
-                        elif self.first_end > other.first_end:
-                            return False
-                        elif self.first_end == other.first_end:
-                            if self.second_end < other.second_end:
-                                return True
-                            else:
-                                return False
+        elif self.secondary_frag.rname < other.secondary_frag.rname:
+            return True
+        elif self.secondary_frag.rname > other.secondary_frag.rname:
+            return False
+        #--------------------------------------------------
+        elif self.primary_frag.junc < other.primary_frag.junc:
+            return True
+        elif self.primary_frag.junc > other.primary_frag.junc:
+            return False
+        elif self.secondary_frag.junc < other.secondary_frag.junc:
+            return True
+        elif self.secondary_frag.junc > other.secondary_frag.junc:
+            return False
+        #--------------------------------------------------
+        elif self.primary_frag.end < other.primary_frag.end:
+            return True
+        elif self.primary_frag.end > other.primary_frag.end:
+            return False
+        elif self.secondary_frag.end < other.secondary_frag.end:
+            return True
+        elif self.secondary_frag.end > other.secondary_frag.end:
+            return False
         else:
-            raise StandardError, "Problem in chrom comparison"
-
+            return self.readname < other.readname
 
 
 class ReadFragment:

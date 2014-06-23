@@ -332,10 +332,10 @@ $(FINAL_FASTQ_DIR)/%.un1.fastq.gz $(FINAL_FASTQ_DIR)/%.un2.fastq.gz $(FINAL_FAST
 #--------------------------------------------------------------------------------
 ## python2.7 /home/josh/collabs/scripts/extract_bwa_chimeras.py Undetermined_S0_L001.pair.bam --junction Undetermined_S0_L001.pair.junc --fusionreads Undetermined_S0_L001.pair.fusread
 #-----------
-$(RESULTS_DIR)/%.junc $(STAGE_DIR)/%.fusread : $(BWA_OUTDIR)/%.bam
+$(RESULTS_DIR)/%.junc $(STAGE_DIR)/%.fusread : $(BWA_OUTDIR)/%.bam $(SYN_INSERTSEQ)
 	$(dir_guard)
 	# python2.7 $SCRIPTS/extract_reads_and_fusions.py $<  DUMMY --junction $*_junctions.csv --fusionreads $*_fusionreads.csv > /dev/null
-	python2.7 $(SCRIPTS_DIR)/extract_bwa_chimeras.py $< --junction $(dir $@)$*.junc.tmp --fusionreads $(dir $@)$*.fusread.tmp
+	python2.7 $(SCRIPTS_DIR)/extract_bwa_chimeras.py $< --junction $(dir $@)$*.junc.tmp --fusionreads $(dir $@)$*.fusread.tmp --insert $(word 2,$^)
 	mv $(dir $@)$*.junc.tmp $(dir $@)$*.junc
 	mv $(dir $@)$*.fusread.tmp $(dir $@)$*.fusread
 
@@ -364,7 +364,7 @@ $(SYNREF_AND_SYNINSERT_SEQ) : $(SYN_REFSEQ) $(SYN_INSERTSEQ)
 
 $(SYN_MUTSEQ) : $(SYN_REFSEQ) $(SYN_INSERTSEQ)
 	$(dir_guard)
-	python2.7 $(SCRIPTS_DIR)/make_synthetic_insertion.py $(SYN_REFSEQ) $(SYN_INSERTSEQ) --position 800 --output $@.tmp
+	python2.7 $(SCRIPTS_DIR)/make_synthetic_insertion.py $(SYN_REFSEQ) $(SYN_INSERTSEQ) --position 800 --delete 50 --output $@.tmp
 	mv $@.tmp $@
 	# python2.7 /Users/josh/Documents/BioinfCollabs/scripts/make_synthetic_chimeric_reads.py random_seqs.fa --output random_seq_reads.fastq
 	# bwa index -p rand_seqs random_seqs.fa 

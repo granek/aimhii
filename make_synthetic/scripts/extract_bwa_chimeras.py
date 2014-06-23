@@ -36,28 +36,27 @@ def main():
     # parser.add_argument("--group", help="group reads and output groups to separate FASTQ files.",action="store_true",default=False)
     args = parser.parse_args()
 
-    junction_dict = find_chimeric_reads(args.SAM_FILE.name)
+    junction_list = find_chimeric_reads(args.SAM_FILE.name)
     # find_chimeric_reads_htseq(args.SAM_FILE.name)
     if args.junction:
-        for key in sorted(junction_dict.keys()):
+        # count the number of hits at each junction
+        junction_count_dict = {}
+        for curjunc in junction_list:
+            junction_count_dict[curjunc.junction_tuple] = 1+junction_count_dict.get(curjunc.junction_tuple,0)
+        for key in sorted(junction_count_dict):
             (l_chrom, l_junc),(r_chrom, r_junc) = key
-            value = junction_dict[key]
             print >>args.junction, "{4}\t{0}:{1}~{2}:{3}".format(l_chrom, l_junc,
                                                                  r_chrom, r_junc,
-                                                                 len(value))
+                                                                 junction_count_dict[key])
     if args.fusionreads:
-        for key in sorted(junction_dict.keys()):
-            (l_chrom, l_junc),(r_chrom, r_junc) = key
-            for readname in junction_dict[key]:
-                print >>args.fusionreads, "{4}\t{0}:{1}~{2}:{3}".format(l_chrom, l_junc,
-                                                                        r_chrom, r_junc,
-                                                                        readname)
+        for curjunc in sorted(junction_list,key=lambda x: x.junction_tuple):
+            print >>args.fusionreads, "{0.readname}\t{0.chrom1}:{0.junc1}~{0.chrom2}:{0.junc2}".format(curjunc)
 
 def find_chimeric_reads(sam_filename):
-    junction_dict = {}
+    junction_list = []
     samfile = pysam.Samfile(sam_filename)
-    refs = samfile.references
-    chroms_re = re.compile("("+'|'.join(samfile.references)+")-("+'|'.join(samfile.references)+")")
+    # refs = samfile.references
+    # chroms_re = re.compile("("+'|'.join(samfile.references)+")-("+'|'.join(samfile.references)+")")
     
     # for aread in samfile.fetch():
     print >>sys.stderr, "aread.qname, samfile.getrname(aread.tid), aread.cigarstring, aread.aend, aread.alen, aread.pos, aread.qend, aread.qlen, aread.qstart, tags['SA']"    
@@ -106,22 +105,24 @@ def find_chimeric_reads(sam_filename):
                 for part in read_parts:
                     print part
                 for i in range(len(read_parts)-1):
-                    l_part = read_parts[i]
-                    r_part = read_parts[i+1]
-                    l_chrom = l_part.rname
-                    r_chrom = r_part.rname
-                    if (l_part.strand == "-") and (r_part.strand == "-"):
-                        l_junc = l_part.start_d
-                        r_junc = r_part.end_d
-                    else:
-                        l_junc = l_part.end_d
-                        r_junc = r_part.start_d
-                    print "junction: {0.rname}:{2}<->{1.rname}:{3}".format(l_part,r_part,l_junc,r_junc)
-                    junction_dict.setdefault(((l_chrom, l_junc),(r_chrom, r_junc)),set()).add(aread.qname)
+                    cur_junction = ChimeraJunction(read_parts[i],read_parts[i+1],aread.qname)
+                    # l_chrom = l_part.rname
+                    # r_chrom = r_part.rname
+                    # if (l_part.strand == "-") and (r_part.strand == "-"):
+                    #     l_junc = l_part.start_d
+                    #     r_junc = r_part.end_d
+                    # else:
+                    #     l_junc = l_part.end_d
+                    #     r_junc = r_part.start_d
+                    # print "junction: {0.rname}:{2}<->{1.rname}:{3}".format(l_part,r_part,l_junc,r_junc)
+                    # junction_dict.setdefault(((l_chrom, l_junc),(r_chrom, r_junc)),set()).add(aread.qname)
+                    print cur_junction
+                    # junction_dict.setdefault(cur_junction,set()).add(aread.qname)
+                    junction_list.append(cur_junction)
                 print ""
             else:
                 print "{0.qname:20} r{3} {4}\t{1}:{0.pos}-{0.aend}[{0.alen}]\tQ:{0.qstart}-{0.qend}[{0.qlen}]\t{0.cigarstring:10}".format(aread,rname, sa_list,readnum,line_type)
-    return junction_dict
+    return junction_list
 
 
 def parse_samfile_htseq(sam_filename,refname):
@@ -146,7 +147,9 @@ def parse_samfile_htseq(sam_filename,refname):
 
 class ChimeraJunction:
     def __init__(self,l_part,r_part,qname):
-        self.qname = qname
+        self.readname = qname
+        # self.l_chrom = l_part.rname
+        # self.r_chrom = r_part.rname
         l_chrom = l_part.rname
         r_chrom = r_part.rname
         if (l_part.strand == "-") and (r_part.strand == "-"):
@@ -162,39 +165,48 @@ class ChimeraJunction:
             r_end = r_part.end_d
 
         if l_part.rname < r_part.rname:
-            self.first_chrom, self.first_junc, self.first_end = l_chrom, l_junc, l_end
-            self.second_chrom, self.second_junc, self.second_end = r_chrom, r_junc, r_end
+            self.chrom1, self.junc1, self.first_end = l_chrom, l_junc, l_end
+            self.chrom2, self.junc2, self.second_end = r_chrom, r_junc, r_end
         else:
-            self.first_chrom, self.first_junc, self.first_end = r_chrom, r_junc, r_end
-            self.second_chrom, self.second_junc, self.second_end = l_chrom, l_junc, l_end
+            self.chrom1, self.junc1, self.first_end = r_chrom, r_junc, r_end
+            self.chrom2, self.junc2, self.second_end = l_chrom, l_junc, l_end
            
         print "junction: {0.rname}:{2}<->{1.rname}:{3}".format(l_part,r_part,l_junc,r_junc)
-        junction_dict.setdefault(((l_chrom, l_junc),(r_chrom, r_junc)),set()).add(aread.qname)
+        # junction_dict.setdefault(((l_chrom, l_junc),(r_chrom, r_junc)),set()).add(aread.qname)
 
     def __str__(self):
-        return "{0}:{1}~{2}:{3}".format(first_chrom, first_junc,second_chrom, second_junc)
+        return "{0.chrom1}:{0.junc1}~{0.chrom2}:{0.junc2}".format(self)
+
+    # def __hash__(self):
+    #     # return hash((self.l_chrom, self.l_junc),(self.r_chrom, self.r_junc))
+    #     return hash(((self.chrom1, self.junc1),(self.chrom2, self.junc2)))
+    @property
+    def junction_tuple(self):
+        return (self.chrom1, self.junc1),(self.chrom2, self.junc2)
+
+
 
     def __lt__(self,other):
-        if self.first_chrom < other.first_chrom:
+        if self.chrom1 < other.chrom1:
             return True
-        elif self.first_chrom > other.first_chrom:
+        elif self.chrom1 > other.chrom1:
             return False
-        elif self.first_chrom == other.first_chrom:
-            if self.second_chrom < other.second_chrom:
+        elif self.chrom1 == other.chrom1:
+            if self.chrom2 < other.chrom2:
                 return True
-            elif self.second_chrom > other.second_chrom:
+            elif self.chrom2 > other.chrom2:
                 return False
-            elif self.second_chrom == other.second_chrom:
-                if self.first_junc < other.first_junc:
+            elif self.chrom2 == other.chrom2:
+                if self.junc1 < other.junc1:
                     return True
-                elif self.first_junc > other.first_junc:
+                elif self.junc1 > other.junc1:
                     return False
-                elif self.first_junc == other.first_junc:
-                    if self.second_junc < other.second_junc:
+                elif self.junc1 == other.junc1:
+                    if self.junc2 < other.junc2:
                         return True
-                    elif self.second_junc > other.second_junc:
+                    elif self.junc2 > other.junc2:
                         return False
-                    elif self.second_junc == other.second_junc:
+                    elif self.junc2 == other.junc2:
                         if self.first_end < other.first_end:
                             return True
                         elif self.first_end > other.first_end:

@@ -1,19 +1,21 @@
 # /ssh:microbe:/home/josh/collabs/AlspaughLab/scripts/bwamem_chimeras.mk
-# make all --load-average 8 --jobs --warn-undefined-variables # for parallel make
+# make all TEST="TRUE" --load-average 8 --jobs --warn-undefined-variables # JUST RUN Undetermined FASTQS - quick test
+# make all SYNTHETIC="TRUE" --jobs 4 --warn-undefined-variables # JUST RUN Undetermined FASTQS - quick test
+# make all --load-average 8 --jobs --warn-undefined-variables # FULL RUN
 # make all  -l 16 -j # for parallel make
 STAGE_DIR=staging
 SEQ_DIR=seqs
 BWA_OUTDIR=bwa
 RESULTS_DIR=results
+SCRIPTS_DIR=scripts
+
 
 # PZPNAT_SEQ=ref/pPZP-NATcc_plasmid_100813.fasta
 PZPNAT_SEQ=$(COLLAB)/AlspaughLab/info/pPZP-NATcc.fasta 
 H99_SEQ=$(STAGE_DIR)/cryptococcus_neoformans_var._grubii_h99__cna3__3_supercontigs.fasta.gz
-MERGED_SEQ=$(SEQ_DIR)/h99_pzpnat.fa
-INDEXBASE=$(basename $(MERGED_SEQ))
-INDEX_FILES=$(addprefix $(INDEXBASE),.bwt .pac .ann .amb .sa)
-RAW_FASTQ_DIR=/home/ske5/WHM_1/raw_fastqs
-FASTQ_DIR= $(RAW_FASTQ_DIR)
+H99_AND_PZPNAT_SEQ := $(SEQ_DIR)/h99_pzpnat.fa
+
+## FASTQ_DIR= $(RAW_FASTQ_DIR)
 # TRIM_FASTQ_DIR=trim_fastqs
 ##----------------------------------------------------------------------
 FINAL_FASTQ_DIR=final_fastqs
@@ -27,10 +29,44 @@ ADAPTER_FASTA=info/illumina_adapter1.fasta
 # /home/ske5/WHM_1/raw_fastqs/Undetermined_S0_L001_R2_001.fastq.gz
 
 
-ALL_FASTQS := $(notdir $(wildcard $(RAW_FASTQ_DIR)/*.fastq.gz))
-UNDETERMINED_FASTQS := $(notdir $(wildcard $(RAW_FASTQ_DIR)/Undetermined*.fastq.gz))
-FASTQS := $(UNDETERMINED_FASTQS)
+REAL_FASTQ_DIR := /home/ske5/WHM_1/raw_fastqs
+SYN_DIR=synthetic
+SYNTHETIC_FASTQ_DIR=$(SYN_DIR)
+
+
+ALL_FASTQS := $(notdir $(wildcard $(REAL_FASTQ_DIR)/*.fastq.gz))
+UNDETERMINED_FASTQS := $(notdir $(wildcard $(REAL_FASTQ_DIR)/Undetermined*.fastq.gz))
+
+SYNTHETIC_FASTQS :=  syn_R1_001.fastq.gz syn_R2_001.fastq.gz
+SYNTHETIC_FASTQ_FULLPATH := $(addprefix $(SYNTHETIC_FASTQ_DIR)/, $(SYNTHETIC_FASTQS))
+SYN_REFSEQ := $(SYN_DIR)/syn_ref.fa # a synthetic reference sequence
+SYN_INSERTSEQ := $(SYN_DIR)/syn_insert.fa # a synthetic insert sequence
+SYN_MUTSEQ := $(SYN_DIR)/syn_mut.fa # the  synthetic reference sequence with insertions of SYN_INSERTSEQ
+SYNREF_AND_SYNINSERT_SEQ := $(SYN_DIR)/syn_concat.fa # concatenated synthetic reference and insert sequences (for mapping reference)
+# SYNREF_AND_SYNMUT := $(SYN_DIR)/syn_ref_and_mut.fa # concatenated synthetic reference and SYN_MUTSEQ (for simulated read generation)
+SYNREAD_LEN := 250
+
+
+# TEST=
+ifdef SYNTHETIC
+	FASTQS := $(SYNTHETIC_FASTQS)
+	RAW_FASTQ_DIR := $(SYNTHETIC_FASTQ_DIR)
+	MERGED_SEQ=$(SYNREF_AND_SYNINSERT_SEQ)
+else ifdef TEST
+	FASTQS := $(UNDETERMINED_FASTQS)
+	RAW_FASTQ_DIR := $(REAL_FASTQ_DIR)
+	MERGED_SEQ=$(H99_AND_PZPNAT_SEQ)
+else
+	FASTQS := $(ALL_FASTQS)
+	RAW_FASTQ_DIR := $(REAL_FASTQ_DIR)
+	MERGED_SEQ=$(H99_AND_PZPNAT_SEQ)
+endif
+
 FASTQ_SUFFIX=_001.fastq.gz
+
+
+INDEXBASE=$(basename $(MERGED_SEQ))
+INDEX_FILES=$(addprefix $(INDEXBASE),.bwt .pac .ann .amb .sa)
 
 TRIM_FASTQS := $(patsubst %$(FASTQ_SUFFIX),$(FINAL_FASTQ_DIR)/%.trim.fastq.gz,$(FASTQS))
 R1_TRIM_FASTQS := $(patsubst %_R1.trim.fastq.gz,%,$(filter %_R1.trim.fastq.gz, $(TRIM_FASTQS)))
@@ -79,11 +115,15 @@ dir_guard=@mkdir -p $(@D)
 
 # all : test $(TOPHAT_BASE_DIR)/accepted_hits.bam $(STAGE_DIR)/ppzp-nat_reads.bam $(STAGE_DIR)/fusion_chrom_counts.txt
 # all: $(BWA_OUTDIR)/Undetermined_S0.bam $(BWA_OUTDIR)/SE-WHM1_S1.bam
-all: todo $(TRIM_FASTQS) $(JOIN_FASTQS) $(UNSRT_BAMS) $(SORTED_BAMS) $(MERGED_BAMS) $(MERGE_JUNCS) # $(PZP_MERGE_SORT) $(PZP_SA_MERGE_SORT) $(PZP_SA_MERGE_JUNCS) $(MERGE_JUNCS) $(SA_BAMS) $(SA_MERGE_SORT) # $(BWA_OUTDIR)/Undetermined_S0.unsrt.bam 
+all: todo current $(TRIM_FASTQS) $(JOIN_FASTQS) $(UNSRT_BAMS) $(SORTED_BAMS) $(MERGED_BAMS) $(MERGE_JUNCS) # $(PZP_MERGE_SORT) $(PZP_SA_MERGE_SORT) $(PZP_SA_MERGE_JUNCS) $(MERGE_JUNCS) $(SA_BAMS) $(SA_MERGE_SORT) # $(BWA_OUTDIR)/Undetermined_S0.unsrt.bam 
+
+current :
+	@echo "I think I am ready to start summarizing the output of extract_bwa_chimeras.py"
 
 todo :
 	@echo "Get sequences from NCBI instead of Broad for long term stability"
 	@echo "Test that sequence was actually downloaded.  Maybe try MD5 http://www.kolpackov.net/pipermail/notes/2004-September/000011.html"
+	@echo "Check for minimum versions of pysam (needs cigarstring) and bwa (needs mem)"
 test :
 	@echo "-----INDEXBASE-----"
 	@echo $(INDEXBASE)
@@ -95,11 +135,13 @@ test :
 	@echo $(R1_TRIM_FASTQS)
 	@echo "-----UNSRT_BAMS-----"
 	@echo $(UNSRT_BAMS)
+	@echo "_____RAW_FASTQ_DIR_____"
+	@echo $(RAW_FASTQ_DIR)
 
 
 # #===============================================================================
 # # Download and merge reference genomes 
-$(MERGED_SEQ) : $(H99_SEQ) $(PZPNAT_SEQ)
+$(H99_AND_PZPNAT_SEQ) : $(H99_SEQ) $(PZPNAT_SEQ)
 	$(dir_guard)
 	zcat $(word 1,$^) | cat $(word 2,$^) - > $(STAGE_DIR)/$(@F)
 	mv $(STAGE_DIR)/$(@F) $@
@@ -244,7 +286,7 @@ $(BWA_OUTDIR)/%.pair.unsrtbam :  $(FINAL_FASTQ_DIR)/%.un1.fastq.gz $(FINAL_FASTQ
 # # Find fusion read junctions
 # #-----------
 # $(STAGE_DIR)/%_junctions.csv $(STAGE_DIR)/%_fusionreads.csv : %/accepted_hits.bam
-# 	python2.7 $(SCRIPTS)/extract_reads_and_fusions.py $<  DUMMY --junction $*_junctions.csv --fusionreads $*_fusionreads.csv > /dev/null
+# 	python2.7 $(SCRIPTS_DIR)/extract_reads_and_fusions.py $<  DUMMY --junction $*_junctions.csv --fusionreads $*_fusionreads.csv > /dev/null
 
 # # Cleanup
 # #-----------
@@ -293,13 +335,63 @@ $(FINAL_FASTQ_DIR)/%.un1.fastq.gz $(FINAL_FASTQ_DIR)/%.un2.fastq.gz $(FINAL_FAST
 $(RESULTS_DIR)/%.junc $(STAGE_DIR)/%.fusread : $(BWA_OUTDIR)/%.bam
 	$(dir_guard)
 	# python2.7 $SCRIPTS/extract_reads_and_fusions.py $<  DUMMY --junction $*_junctions.csv --fusionreads $*_fusionreads.csv > /dev/null
-	python2.7 $(SCRIPTS)/extract_bwa_chimeras.py $< --junction $(dir $@)$*.junc.tmp --fusionreads $(dir $@)$*.fusread.tmp
+	python2.7 $(SCRIPTS_DIR)/extract_bwa_chimeras.py $< --junction $(dir $@)$*.junc.tmp --fusionreads $(dir $@)$*.fusread.tmp
 	mv $(dir $@)$*.junc.tmp $(dir $@)$*.junc
 	mv $(dir $@)$*.fusread.tmp $(dir $@)$*.fusread
 
+##================================================================================
+##================================================================================
+##================================================================================
+syn : $(SYN_REFSEQ) $(SYN_INSERTSEQ) $(SYN_MUTSEQ) $(SYNTHETIC_FASTQ_FULLPATH)
 
-reset : 
+%_R1$(FASTQ_SUFFIX) %_R2$(FASTQ_SUFFIX) : %_ref.fa %_mut.fa # $(SYN_REFSEQ) $(SYN_MUTSEQ)
+	$(dir_guard)
+	$(eval SEQ1_R1 := $(basename $(word 1,$^))_R1.fastq)
+	$(eval SEQ1_R2 := $(basename $(word 1,$^))_R2.fastq)
+	$(eval SEQ2_R1 := $(basename $(word 2,$^))_R1.fastq)
+	$(eval SEQ2_R2 := $(basename $(word 2,$^))_R2.fastq)
+
+	wgsim -N 100000 -1 $(SYNREAD_LEN) -2 $(SYNREAD_LEN) $(word 1,$^) $(SEQ1_R1) $(SEQ1_R2)
+	wgsim -N 20000  -1 $(SYNREAD_LEN) -2 $(SYNREAD_LEN) $(word 2,$^) $(SEQ2_R1) $(SEQ2_R2)
+	cat $(SEQ1_R1) $(SEQ2_R1) | gzip -c > $*_R1$(FASTQ_SUFFIX)
+	cat $(SEQ1_R2) $(SEQ2_R2) | gzip -c > $*_R2$(FASTQ_SUFFIX)
+	rm -f $(SEQ1_R1) $(SEQ1_R2) $(SEQ2_R1) $(SEQ2_R2)
+
+$(SYNREF_AND_SYNINSERT_SEQ) : $(SYN_REFSEQ) $(SYN_INSERTSEQ)
+	$(dir_guard)
+	cat $(word 1,$^) $(word 2,$^) > $@.tmp
+	mv $@.tmp $@
+
+$(SYN_MUTSEQ) : $(SYN_REFSEQ) $(SYN_INSERTSEQ)
+	$(dir_guard)
+	python2.7 $(SCRIPTS_DIR)/make_synthetic_insertion.py $(SYN_REFSEQ) $(SYN_INSERTSEQ) --position 800 --output $@.tmp
+	mv $@.tmp $@
+	# python2.7 /Users/josh/Documents/BioinfCollabs/scripts/make_synthetic_chimeric_reads.py random_seqs.fa --output random_seq_reads.fastq
+	# bwa index -p rand_seqs random_seqs.fa 
+	# bwa mem rand_seqs random_seq_reads.fastq | samtools view -Sb - > rand.bam
+	# python2.7 /Users/josh/Documents/BioinfCollabs/scripts/extract_bwa_chimeras.py rand.bam 
+	# python2.7 /Users/josh/Documents/BioinfCollabs/scripts/extract_bwa_chimeras.py rand.bam | egrep "prime|junc"
+
+$(SYN_REFSEQ) :
+	$(dir_guard)
+	python2.7 $(SCRIPTS_DIR)/make_random_sequence.py --prefix ref --lower --numseqs 1 --seqlen 100000 --output $@.tmp
+	mv $@.tmp $@
+
+$(SYN_INSERTSEQ) :
+	$(dir_guard)
+	python2.7 $(SCRIPTS_DIR)/make_random_sequence.py --prefix insert --pad 10 --numseqs 1 --seqlen 2000 --output $@.tmp
+	mv $@.tmp $@
+
+##================================================================================
+##================================================================================
+##================================================================================
+
+
+reset : cleansyn
 	rm -rf $(FINAL_FASTQ_DIR) $(STAGE_DIR) $(SEQ_DIR) $(BWA_OUTDIR) $(RESULTS_DIR)
 
 cleancurrent :
-	rm -rf $(STAGE_DIR) $(SEQ_DIR) $(BWA_OUTDIR) $(RESULTS_DIR)
+	rm -rf $(STAGE_DIR) $(BWA_OUTDIR) $(RESULTS_DIR) $(FINAL_FASTQ_DIR)
+
+cleansyn :
+	rm -rf $(SYN_DIR)

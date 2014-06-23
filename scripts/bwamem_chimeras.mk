@@ -351,8 +351,8 @@ syn : $(SYN_REFSEQ) $(SYN_INSERTSEQ) $(SYN_MUTSEQ) $(SYNTHETIC_FASTQ_FULLPATH)
 	$(eval SEQ2_R1 := $(basename $(word 2,$^))_R1.fastq)
 	$(eval SEQ2_R2 := $(basename $(word 2,$^))_R2.fastq)
 
-	wgsim -N 100000 -1 $(SYNREAD_LEN) -2 $(SYNREAD_LEN) $(word 1,$^) $(SEQ1_R1) $(SEQ1_R2)
-	wgsim -N 20000  -1 $(SYNREAD_LEN) -2 $(SYNREAD_LEN) $(word 2,$^) $(SEQ2_R1) $(SEQ2_R2)
+	wgsim -S 1 -N 100000 -1 $(SYNREAD_LEN) -2 $(SYNREAD_LEN) $(word 1,$^) $(SEQ1_R1) $(SEQ1_R2)
+	wgsim -S 2 -N 20000  -1 $(SYNREAD_LEN) -2 $(SYNREAD_LEN) $(word 2,$^) $(SEQ2_R1) $(SEQ2_R2)
 	cat $(SEQ1_R1) $(SEQ2_R1) | gzip -c > $*_R1$(FASTQ_SUFFIX)
 	cat $(SEQ1_R2) $(SEQ2_R2) | gzip -c > $*_R2$(FASTQ_SUFFIX)
 	rm -f $(SEQ1_R1) $(SEQ1_R2) $(SEQ2_R1) $(SEQ2_R2)
@@ -374,12 +374,12 @@ $(SYN_MUTSEQ) : $(SYN_REFSEQ) $(SYN_INSERTSEQ)
 
 $(SYN_REFSEQ) :
 	$(dir_guard)
-	python2.7 $(SCRIPTS_DIR)/make_random_sequence.py --prefix ref --lower --numseqs 1 --seqlen 100000 --output $@.tmp
+	python2.7 $(SCRIPTS_DIR)/make_random_sequence.py --randseed 1 --prefix ref --lower --numseqs 1 --seqlen 100000 --output $@.tmp
 	mv $@.tmp $@
 
 $(SYN_INSERTSEQ) :
 	$(dir_guard)
-	python2.7 $(SCRIPTS_DIR)/make_random_sequence.py --prefix insert --pad 10 --numseqs 1 --seqlen 2000 --output $@.tmp
+	python2.7 $(SCRIPTS_DIR)/make_random_sequence.py --randseed 2 --prefix insert --pad 10 --numseqs 1 --seqlen 2000 --output $@.tmp
 	mv $@.tmp $@
 
 ##================================================================================

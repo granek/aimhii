@@ -5,16 +5,15 @@ import pysam
 import re
 import os
 from Bio import SeqIO
-from find_insert_clusters import ReadCluster, RIGHT, LEFT
+from find_insert_clusters import ReadCluster, filter_clusters, find_cluster_pairs, RIGHT, LEFT
 
 cigar_re = re.compile("(d+)([mM])(d+)[F](d+)[mM]")
 
 def current_work():
     todo_list = [
-        "NEED TO FIND JUNCTION POINT!!",
-        "Strategy: only work with primary line",
-        "Make synthetic data to check current code!!!",
-        "Need to handle indels better (max indel size?)"
+        "Need to handle indels better (max indel size?)",
+        "Are all outputs base 1!!!!???",
+        "Handle meta clusters where constituent clusters overlap (small deletion)"
         ]
     todo_list.insert(0, "="*80)
     todo_list.append("="*80)
@@ -34,9 +33,13 @@ def main():
     parser.add_argument("--fusionreads", metavar="READ_FILE",
                         type=argparse.FileType('w'),
                         help="Output reads containing junctions to %(metavar)s")
-    parser.add_argument("--cluster", action="store_true", help="Cluster primary_fragments of junction reads", default=False)
+    # parser.add_argument("--cluster", action="store_true", help="Cluster primary_fragments of junction reads", default=False)
     parser.add_argument("--insertonly", action="store_true", help="Filter out junctions that don't include the insert", default=False)
-    
+    parser.add_argument("--minreads", type=int, metavar="NUM_READS", default=2, 
+                        help="Clusters consisting of less than %(metavar)s reads are ignored (default: %(default)s)")
+    parser.add_argument("--maxgap", type=int, metavar="GAP_LENGTH", default=100, 
+                        help="Clusters separated by no more than %(metavar)s) bases are considered to be cluster doublets (default: %(default)s)")
+
     # parser.add_argument("--outdir", metavar="OUTDIR", help="Save output file to %(metavar)s (default is same directory as SAM_FILE)")
     # parser.add_argument("--verbose", help="increase output verbosity",action="store_true",default=False)
     # parser.add_argument("--group", help="group reads and output groups to separate FASTQ files.",action="store_true",default=False)
@@ -65,11 +68,23 @@ def main():
         # for curjunc in sorted(junction_list,key=lambda x: x.junction_tuple):
         for curjunc in junction_list:
             print >>args.fusionreads, "{0.readname}\t{0.chrom1}:{0.junc1}~{0.chrom2}:{0.junc2}".format(curjunc)
-    if args.cluster:
-        print "CLUSTERING"
-        cluster_list = cluster_junctions(junction_list)
-        for cluster in cluster_list:
-            print cluster
+    
+    print "CLUSTERING"
+    cluster_list = cluster_junctions(junction_list)
+    cluster_list = filter_clusters(cluster_list, args.minreads)
+
+    for cluster in cluster_list:
+        print cluster
+
+    for cluster in cluster_list:
+        print "{0.count:<10} {0.range}".format(cluster)
+
+    print "NEEED TO MAKE VALUES base 1!!!!", "#"*50
+    cluster_group_list = find_cluster_pairs(cluster_list,args.maxgap)
+    print "NEEED TO MAKE VALUES base 1!!!!", "#"*50
+    for group in cluster_group_list:
+        print group
+
 
 def find_chimeric_reads(sam_filename):
     junction_list = []

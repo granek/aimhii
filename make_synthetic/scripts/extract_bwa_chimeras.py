@@ -35,6 +35,8 @@ def main():
                         type=argparse.FileType('w'),
                         help="Output reads containing junctions to %(metavar)s")
     parser.add_argument("--cluster", action="store_true", help="Cluster primary_fragments of junction reads", default=False)
+    parser.add_argument("--insertonly", action="store_true", help="Filter out junctions that don't include the insert", default=False)
+    
     # parser.add_argument("--outdir", metavar="OUTDIR", help="Save output file to %(metavar)s (default is same directory as SAM_FILE)")
     # parser.add_argument("--verbose", help="increase output verbosity",action="store_true",default=False)
     # parser.add_argument("--group", help="group reads and output groups to separate FASTQ files.",action="store_true",default=False)
@@ -45,6 +47,8 @@ def main():
         ChimeraJunction.InsertSeqID = insert_rec.id
 
     junction_list = find_chimeric_reads(args.SAM_FILE.name)
+    if args.insertonly and args.insert:
+        junction_list = [junction for junction in junction_list if junction.contains_insert]
     junction_list.sort()
     # find_chimeric_reads_htseq(args.SAM_FILE.name)
     if args.junction:
@@ -162,19 +166,15 @@ def parse_samfile_htseq(sam_filename,refname):
 
 def cluster_junctions(junction_list):
     cluster_list = []
-    cur_cluster = None
     for cur_junction in junction_list:
-        if cur_cluster == None:
-            #prime the pump
-            cur_cluster = ReadCluster(cur_junction)
-            cluster_list.append(cur_cluster)
-        elif cur_cluster.overlaps(cur_junction) and (cur_cluster.insertion_side == cur_junction.insert_side):
-            # aread overlaps cur_cluster, so it should be added
-            cur_cluster.add_read(cur_junction)
-        else:
+        added_to_cluster = False
+        for cur_cluster in cluster_list:
+            if cur_cluster.overlaps(cur_junction):
+                cur_cluster.add_read(cur_junction)
+                added_to_cluster = True
+        if not added_to_cluster:
             # aread doesn't overlap cur_cluster, so time to start a new cluster
-            cur_cluster = ReadCluster(cur_junction)
-            cluster_list.append(cur_cluster)
+            cluster_list.append(ReadCluster(cur_junction))
     # cluster_list.append(cur_cluster)
     # print cur_cluster.range, cur_cluster.count
     return cluster_list
@@ -250,6 +250,11 @@ class ChimeraJunction:
     @property
     def junction_tuple(self):
         return (self.chrom1, self.junc1),(self.chrom2, self.junc2)
+
+    @property
+    def contains_insert(self):
+        return (ChimeraJunction.InsertSeqID == self.primary_frag.rname or
+                ChimeraJunction.InsertSeqID == self.secondary_frag.rname)
 
     def __lt__(self,other):
         if self.primary_frag.rname < other.primary_frag.rname:

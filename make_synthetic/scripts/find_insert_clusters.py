@@ -182,6 +182,7 @@ def find_clusters(align_seq):
 class ReadCluster:
     def __init__(self,aread):
         self.read_list = [aread]
+        self.secondary_name = aread.secondary_frag.rname
         # print aread
         self.iv = aread.iv.copy()
         self.iv.strand="."
@@ -196,7 +197,9 @@ class ReadCluster:
         self.read_list.append(aread)
 
     def overlaps(self,aread):
-        return self.iv.overlaps(aread.iv)
+        return (self.iv.overlaps(aread.iv) and
+                self.secondary_name == aread.secondary_frag.rname and
+                self.insertion_side == aread.insert_side)
 
     @property
     def range(self):
@@ -217,7 +220,6 @@ class ReadCluster:
         # if self._insert_side == None:
         #     self._determine_insertion_point()
         return self._insert_side
-
 
     def _determine_insertion_point(self):
         insert_median = int(np.median([read.insert_point for read in self.read_list]))

@@ -41,7 +41,8 @@ def main():
     # if args.outdir:
     #     out_fastq_name = os.path.join(args.outdir,os.path.basename(out_fastq_name))
     print "NEEED TO MAKE VALUES base 1!!!!", "#"*50
-    cluster_list = find_clusters(args.SAM_FILE.name)
+    read_iter = load_sam_or_bam(args.SAM_FILE.name)
+    cluster_list = find_clusters(read_iter)
     cluster_list = filter_clusters(cluster_list, args.minreads)
     
     for cluster in cluster_list:
@@ -143,10 +144,7 @@ def find_cluster_pairs(cluster_list,max_gap_size):
     # # while (cluster_list):
     return cluster_group_list
         
-    
-    
-
-def find_clusters(sam_filename):
+def load_sam_or_bam(sam_filename):
     sambase,samext = os.path.splitext(sam_filename)
     if samext == ".sam":
         align_seq = iter(HTSeq.SAM_Reader( sam_filename ))
@@ -155,7 +153,9 @@ def find_clusters(sam_filename):
     else:
         print >>sys.stderr, "Problem with SAM/BAM File:", sam_filename
         sys.exit(1)
+    return align_seq
 
+def find_clusters(align_seq):
     cluster_list = []
     cur_cluster = None
     for aread in align_seq:
@@ -193,6 +193,7 @@ class ReadCluster:
         # print "aread.iv", aread.iv, type(aread.iv)
         self.iv.extend_to_include(aread.iv)
         self.read_list.append(aread)
+        self._insert_side = aread.insert_side
 
     def overlaps(self,aread):
         return self.iv.overlaps(aread.iv)
@@ -214,51 +215,49 @@ class ReadCluster:
 
     @property
     def insertion_side(self):
-        if self._insert_side == None:
-            self._determine_insertion_point()
+        # if self._insert_side == None:
+        #     self._determine_insertion_point()
         return self._insert_side
 
 
     def _determine_insertion_point(self):
-        if len(self.read_list) == 1:
-            self._insert_point = -1
-            self._insert_side = "?"
-        start_median = int(np.median([read.iv.start for read in self.read_list]))
-        end_median = int(np.median([read.iv.end for read in self.read_list]))
+        insert_median = int(np.median([read.insert_point for read in self.read_list]))
+        self._insert_point = insert_median
+        # if len(self.read_list) == 1:
+        #     self._insert_point = -1
+        #     self._insert_side = "?"
+        # start_median = int(np.median([read.iv.start for read in self.read_list]))
+        # end_median = int(np.median([read.iv.end for read in self.read_list]))
 
-        frac_reads_start_median = sum(read.iv.start == start_median for read in self.read_list)/len(self.read_list)
-        frac_reads_end_median = sum(read.iv.end == end_median for read in self.read_list)/len(self.read_list)
+        # frac_reads_start_median = sum(read.iv.start == start_median for read in self.read_list)/len(self.read_list)
+        # frac_reads_end_median = sum(read.iv.end == end_median for read in self.read_list)/len(self.read_list)
 
-        if (frac_reads_start_median > 0.5) and (frac_reads_end_median > 0.5):
-            print "Can't decide which end has insert point"
-        elif (frac_reads_start_median > 0.5):
-            self._insert_point = start_median
-            self._insert_side = LEFT
-        elif (frac_reads_end_median > 0.5):
-            self._insert_point = end_median
-            self._insert_side = RIGHT
-        else:
-            self._insert_point = -2
-            self._insert_side = "?!!"
-        
-        # all_reads_start_median = all(read.iv.start == start_median for read in self.read_list)/len(self.read_list)
-        # all_reads_end_median = all(read.iv.end == end_median for read in self.read_list)/len(self.read_list)
-
-        # if all_reads_start_median and all_reads_end_median:
+        # if (frac_reads_start_median > 0.5) and (frac_reads_end_median > 0.5):
         #     print "Can't decide which end has insert point"
-        # elif all_reads_start_median:
+        # elif (frac_reads_start_median > 0.5):
         #     self._insert_point = start_median
         #     self._insert_side = LEFT
-        # elif all_reads_end_median:
+        # elif (frac_reads_end_median > 0.5):
         #     self._insert_point = end_median
         #     self._insert_side = RIGHT
         # else:
-        #     self._insert_point = -1
-        #     self._insert_side = "?"
-
-
-
+        #     self._insert_point = -2
+        #     self._insert_side = "?!!"
         
+        # # all_reads_start_median = all(read.iv.start == start_median for read in self.read_list)/len(self.read_list)
+        # # all_reads_end_median = all(read.iv.end == end_median for read in self.read_list)/len(self.read_list)
+
+        # # if all_reads_start_median and all_reads_end_median:
+        # #     print "Can't decide which end has insert point"
+        # # elif all_reads_start_median:
+        # #     self._insert_point = start_median
+        # #     self._insert_side = LEFT
+        # # elif all_reads_end_median:
+        # #     self._insert_point = end_median
+        # #     self._insert_side = RIGHT
+        # # else:
+        # #     self._insert_point = -1
+        # #     self._insert_side = "?"
 
     # def __lt__(self,other):
     #     if self.iv.chrom < 

@@ -5,6 +5,7 @@ import pysam
 import re
 import os
 from Bio import SeqIO
+from find_insert_clusters import ReadCluster, RIGHT, LEFT
 
 cigar_re = re.compile("(d+)([mM])(d+)[F](d+)[mM]")
 
@@ -33,6 +34,7 @@ def main():
     parser.add_argument("--fusionreads", metavar="READ_FILE",
                         type=argparse.FileType('w'),
                         help="Output reads containing junctions to %(metavar)s")
+    parser.add_argument("--cluster", action="store_true", help="Cluster primary_fragments of junction reads", default=False)
     # parser.add_argument("--outdir", metavar="OUTDIR", help="Save output file to %(metavar)s (default is same directory as SAM_FILE)")
     # parser.add_argument("--verbose", help="increase output verbosity",action="store_true",default=False)
     # parser.add_argument("--group", help="group reads and output groups to separate FASTQ files.",action="store_true",default=False)
@@ -43,6 +45,7 @@ def main():
         ChimeraJunction.InsertSeqID = insert_rec.id
 
     junction_list = find_chimeric_reads(args.SAM_FILE.name)
+    junction_list.sort()
     # find_chimeric_reads_htseq(args.SAM_FILE.name)
     if args.junction:
         # count the number of hits at each junction
@@ -56,8 +59,13 @@ def main():
                                                                  junction_count_dict[key])
     if args.fusionreads:
         # for curjunc in sorted(junction_list,key=lambda x: x.junction_tuple):
-        for curjunc in sorted(junction_list):
+        for curjunc in junction_list:
             print >>args.fusionreads, "{0.readname}\t{0.chrom1}:{0.junc1}~{0.chrom2}:{0.junc2}".format(curjunc)
+    if args.cluster:
+        print "CLUSTERING"
+        cluster_list = cluster_junctions(junction_list)
+        for cluster in cluster_list:
+            print cluster
 
 def find_chimeric_reads(sam_filename):
     junction_list = []
@@ -152,14 +160,33 @@ def parse_samfile_htseq(sam_filename,refname):
     
     return record_list
 
+def cluster_junctions(junction_list):
+    cluster_list = []
+    cur_cluster = None
+    for cur_junction in junction_list:
+        if cur_cluster == None:
+            #prime the pump
+            cur_cluster = ReadCluster(cur_junction)
+            cluster_list.append(cur_cluster)
+        elif cur_cluster.overlaps(cur_junction) and (cur_cluster.insertion_side == cur_junction.insertion_side):
+            # aread overlaps cur_cluster, so it should be added
+            cur_cluster.add_read(cur_junction)
+        else:
+            # aread doesn't overlap cur_cluster, so time to start a new cluster
+            cur_cluster = ReadCluster(cur_junction)
+            cluster_list.append(cur_cluster)
+    # cluster_list.append(cur_cluster)
+    # print cur_cluster.range, cur_cluster.count
+    return cluster_list
+
 class ChimeraJunction:
     InsertSeqID = None
     def __init__(self,l_part,r_part,qname):
         self.readname = qname
         # self.l_chrom = l_part.rname
         # self.r_chrom = r_part.rname
-        l_chrom = l_part.rname
-        r_chrom = r_part.rname
+        # l_chrom = l_part.rname
+        # r_chrom = r_part.rname
         if (l_part.strand == "-") and (r_part.strand == "-"):
             l_part.junc = l_part.start_d
             l_part.end = l_part.end_d
@@ -194,16 +221,22 @@ class ChimeraJunction:
             # junction is at right end of ref fragment
             self.chrom1, self.junc1, self.end1 = self.primary_frag.rname, self.primary_frag.junc, self.primary_frag.end
             self.chrom2, self.junc2, self.end2 = self.secondary_frag.rname, self.secondary_frag.junc, self.secondary_frag.end
+            self.insert_point = self.primary_frag.junc
+            self.insert_side = RIGHT
         else:
             # junction is at left end of ref fragment
             self.chrom1, self.junc1, self.end1 = self.secondary_frag.rname, self.secondary_frag.junc, self.secondary_frag.end
             self.chrom2, self.junc2, self.end2 = self.primary_frag.rname, self.primary_frag.junc, self.primary_frag.end
+            self.insert_side = LEFT
+        self.insert_point = self.primary_frag.junc
+
         # elif l_part.rname < r_part.rname:
         #     self.chrom1, self.junc1, self.end1 = l_chrom, l_part.junc, l_part.end
         #     self.chrom2, self.junc2, self.end2 = r_chrom, r_part.junc, r_part.end
         # else:
         #     self.chrom1, self.junc1, self.end1 = r_chrom, r_part.junc, r_part.end
         #     self.chrom2, self.junc2, self.end2 = l_chrom, l_part.junc, l_part.end
+        self.iv = self.primary_frag.iv
            
         print "junction: {0.rname}:{0.junc}<->{1.rname}:{1.junc}".format(l_part,r_part)
         # junction_dict.setdefault(((l_chrom, l_junc),(r_chrom, r_junc)),set()).add(aread.qname)
@@ -263,6 +296,7 @@ class ReadFragment:
         else:
             self.start_d = self.pos
             self.end_d = self.aend
+        self.iv = HTSeq.GenomicInterval(rname,pos,aend, strand)
     def __lt__(self,other):
         return self.qstart < other.qstart
 

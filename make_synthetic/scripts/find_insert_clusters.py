@@ -185,7 +185,8 @@ class ReadCluster:
         # print aread
         self.iv = aread.iv.copy()
         self.iv.strand="."
-        self._insert_point = self._insert_side = None
+        self._insert_point = aread.insert_point
+        self._insert_side = aread.insert_side
 
     def add_read(self, aread):
         # print "self.iv", self.iv, type(self.iv)
@@ -193,7 +194,6 @@ class ReadCluster:
         # print "aread.iv", aread.iv, type(aread.iv)
         self.iv.extend_to_include(aread.iv)
         self.read_list.append(aread)
-        self._insert_side = aread.insert_side
 
     def overlaps(self,aread):
         return self.iv.overlaps(aread.iv)
@@ -209,8 +209,7 @@ class ReadCluster:
 
     @property
     def insertion_point(self):
-        if self._insert_point == None:
-            self._determine_insertion_point()
+        self._determine_insertion_point()
         return self._insert_point
 
     @property

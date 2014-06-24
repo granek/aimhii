@@ -168,7 +168,7 @@ def cluster_junctions(junction_list):
             #prime the pump
             cur_cluster = ReadCluster(cur_junction)
             cluster_list.append(cur_cluster)
-        elif cur_cluster.overlaps(cur_junction) and (cur_cluster.insertion_side == cur_junction.insertion_side):
+        elif cur_cluster.overlaps(cur_junction) and (cur_cluster.insertion_side == cur_junction.insert_side):
             # aread overlaps cur_cluster, so it should be added
             cur_cluster.add_read(cur_junction)
         else:

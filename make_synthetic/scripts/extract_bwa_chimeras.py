@@ -13,6 +13,8 @@ def current_work():
     todo_list = [
         "Need to handle indels better (max indel size?)",
         "Are all outputs base 1!!!!???",
+        "Formalize metacluster output.  Include insert length and gap length",
+        "harmonize iv with insertion_point (fix current difference in metacluster output)",
         "Handle meta clusters where constituent clusters overlap (small deletion)"
         ]
     todo_list.insert(0, "="*80)
@@ -72,6 +74,7 @@ def main():
     print "CLUSTERING"
     cluster_list = cluster_junctions(junction_list)
     cluster_list = filter_clusters(cluster_list, args.minreads)
+    cluster_list.sort()
 
     for cluster in cluster_list:
         print cluster
@@ -184,7 +187,7 @@ def cluster_junctions(junction_list):
     for cur_junction in junction_list:
         added_to_cluster = False
         for cur_cluster in cluster_list:
-            if cur_cluster.overlaps(cur_junction):
+            if cur_cluster.matches_cluster(cur_junction):
                 cur_cluster.add_read(cur_junction)
                 added_to_cluster = True
         if not added_to_cluster:

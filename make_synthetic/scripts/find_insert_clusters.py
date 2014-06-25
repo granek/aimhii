@@ -108,41 +108,36 @@ def filter_clusters(cluster_list, minreads):
     return [cluster for cluster in cluster_list if cluster.count >= minreads]
     
 def find_cluster_pairs(cluster_list,max_gap_size):
-    cluster_group_list = []
-    ga = HTSeq.GenomicArray("auto", stranded=False,typecode="O")
-    for cluster in cluster_list:
-        ga[cluster.iv] = cluster
-    cur_left = cur_gap = cur_right = None
-    for cur_iv,cur_val in ga.steps():
-        print >>sys.stderr, cur_iv, cur_val, cur_iv.length
-        if cur_val == None:
-            cur_gap = cur_iv
-        elif cur_left == None:
-            cur_left = cur_val
+    cluster_list.sort()
+    metacluster_list = []
+    i = 0
+    while i < len(cluster_list):
+        cur_cluster = cluster_list[i]
+        if i == len(cluster_list)-1:
+            metacluster_list.append(ClusterSingleton(cur_cluster))
+            print >>sys.stderr, "Last cluster is a singleton:", metacluster_list[-1]
+            break
         else:
-            cur_right = cur_val
-            if cur_gap == None:
-                new_group = ClusterDoublet(cur_left,cur_right)
-                print >>sys.stderr, "Found a cluster doublet NO GAP:", 0, new_group.gap, new_group
-                cur_left = cur_gap = cur_right = None
-            elif cur_gap.length < max_gap_size:
-                new_group = ClusterDoublet(cur_left,cur_right)
-                print >>sys.stderr, "Found a cluster doublet:", cur_gap.length, new_group.gap, new_group
-                cur_left = cur_gap = cur_right = None
+            next_cluster = cluster_list[i+1]
+        if (cur_cluster.iv.chrom != next_cluster.iv.chrom):
+            metacluster_list.append(ClusterSingleton(cur_cluster))
+            print >>sys.stderr, "Found a cluster singleton:", metacluster_list[-1]
+            i += 1
+        elif cur_cluster.insertion_side == RIGHT and next_cluster.insertion_side == LEFT:
+            gap = cur_cluster.gap(next_cluster)
+            if gap <= max_gap_size:
+                metacluster_list.append(ClusterDoublet(cur_cluster,next_cluster))
+                print >>sys.stderr, "Found a cluster doublet:", gap, metacluster_list[-1]
+                i += 2
             else:
-                new_group = ClusterSingleton(cur_left)
-                print >>sys.stderr, "Found a cluster singleton:", cur_gap.length, new_group
-                cur_left = cur_right
-                cur_right = cur_gap = None
-            cluster_group_list.append(new_group)
-    
-    # cluster_list = sorted(cluster_list)
-    # print "#"*80
-    # for cluster in cluster_list:
-    #     print "{0.count:<10} {0.range}".format(cluster)
-
-    # # while (cluster_list):
-    return cluster_group_list
+                metacluster_list.append(ClusterSingleton(cur_cluster))
+                print >>sys.stderr, "Found a cluster singleton:", metacluster_list[-1]
+                i += 1
+        else:
+            metacluster_list.append(ClusterSingleton(cur_cluster))
+            print >>sys.stderr, "Found a cluster singleton:", metacluster_list[-1]
+            i += 1
+    return metacluster_list
         
 def load_sam_or_bam(sam_filename):
     sambase,samext = os.path.splitext(sam_filename)
@@ -155,29 +150,29 @@ def load_sam_or_bam(sam_filename):
         sys.exit(1)
     return align_seq
 
-def find_clusters(align_seq):
-    cluster_list = []
-    cur_cluster = None
-    for aread in align_seq:
-        if not aread.aligned:
-            continue
-        elif cur_cluster == None:
-            #prime the pump
-            cur_cluster = ReadCluster(aread)
-            cluster_list.append(cur_cluster)
-        elif cur_cluster.overlaps(aread):
-            # aread overlaps cur_cluster, so it should be added
-            cur_cluster.add_read(aread)
-            # cur_cluster.add_read(aread)
-            # cur_cluster_iv.extend_to_include(aread.iv)
-        else:
-            # aread doesn't overlap cur_cluster, so time to start a new cluster
-            # print "Finished Cluster:", cur_cluster.range, cur_cluster.count
-            cur_cluster = ReadCluster(aread)
-            cluster_list.append(cur_cluster)
-    # cluster_list.append(cur_cluster)
-    # print cur_cluster.range, cur_cluster.count
-    return cluster_list
+# def find_clusters(align_seq):
+#     cluster_list = []
+#     cur_cluster = None
+#     for aread in align_seq:
+#         if not aread.aligned:
+#             continue
+#         elif cur_cluster == None:
+#             #prime the pump
+#             cur_cluster = ReadCluster(aread)
+#             cluster_list.append(cur_cluster)
+#         elif cur_cluster.overlaps(aread):
+#             # aread overlaps cur_cluster, so it should be added
+#             cur_cluster.add_read(aread)
+#             # cur_cluster.add_read(aread)
+#             # cur_cluster_iv.extend_to_include(aread.iv)
+#         else:
+#             # aread doesn't overlap cur_cluster, so time to start a new cluster
+#             # print "Finished Cluster:", cur_cluster.range, cur_cluster.count
+#             cur_cluster = ReadCluster(aread)
+#             cluster_list.append(cur_cluster)
+#     # cluster_list.append(cur_cluster)
+#     # print cur_cluster.range, cur_cluster.count
+#     return cluster_list
 
 class ReadCluster:
     def __init__(self,aread):
@@ -196,10 +191,13 @@ class ReadCluster:
         self.iv.extend_to_include(aread.iv)
         self.read_list.append(aread)
 
-    def overlaps(self,aread):
-        return (self.iv.overlaps(aread.iv) and
+    def matches_cluster(self,aread):
+        return (self.overlaps(aread) and
                 self.secondary_name == aread.secondary_frag.rname and
                 self.insertion_side == aread.insert_side)
+
+    def overlaps(self,aread):
+        return self.iv.overlaps(aread.iv)
 
     @property
     def range(self):
@@ -260,15 +258,20 @@ class ReadCluster:
         # #     self._insert_point = -1
         # #     self._insert_side = "?"
 
-    # def __lt__(self,other):
-    #     if self.iv.chrom < 
-    #     return self.iv < other.iv
+    def __lt__(self,other):
+        if self.iv.chrom == other.iv.chrom:
+            return self.iv.start < other.iv.start
+        else:
+            return self.iv.chrom < other.iv.chrom
 
     def distance(self,other):
         return max(self.iv.start-other.iv.end, other.iv.start-self.iv.end)
 
     def __str__(self):
         return "{0.iv.chrom}:{0.iv.start}-{0.iv.end} LENGTH:{0.iv.length} COUNT:{0.count} INSERT:{0.insertion_side} {0.insertion_point}".format(self)
+
+    def gap(self,other):
+        return (other.iv.start - self.iv.end)-1
 
 
 class ClusterGroup:

@@ -124,10 +124,10 @@ def find_cluster_pairs(cluster_list,max_gap_size):
             print >>sys.stderr, "Found a cluster singleton:", metacluster_list[-1]
             i += 1
         elif cur_cluster.insertion_side == RIGHT and next_cluster.insertion_side == LEFT:
-            gap = cur_cluster.gap(next_cluster)
-            if gap <= max_gap_size:
-                metacluster_list.append(ClusterDoublet(cur_cluster,next_cluster))
-                print >>sys.stderr, "Found a cluster doublet:", gap, metacluster_list[-1]
+            metacluster = ClusterDoublet(cur_cluster,next_cluster)
+            if metacluster.gap_length <= max_gap_size:
+                metacluster_list.append(metacluster)
+                print >>sys.stderr, "Found a cluster doublet:", metacluster.gap_length, metacluster
                 i += 2
             else:
                 metacluster_list.append(ClusterSingleton(cur_cluster))
@@ -180,7 +180,9 @@ class ReadCluster:
         self.secondary_name = aread.secondary_frag.rname
         # print aread
         self.iv = aread.iv.copy()
-        self.iv.strand="."
+        self.secondary_iv = aread.secondary_frag.iv.copy()
+        print "INIT CHECK STRAND", self.iv, self.secondary_iv
+        self.iv.strand = self.secondary_iv.strand = "."
         self._insert_point = aread.insert_point
         self._insert_side = aread.insert_side
 
@@ -188,7 +190,11 @@ class ReadCluster:
         # print "self.iv", self.iv, type(self.iv)
         # print "aread", aread
         # print "aread.iv", aread.iv, type(aread.iv)
+        print "ADD CHECK STRAND", aread.iv, aread.secondary_frag.iv
+
         self.iv.extend_to_include(aread.iv)
+        # print >>sys.stderr, self.secondary_iv
+        self.secondary_iv.extend_to_include(aread.secondary_frag.iv)
         self.read_list.append(aread)
 
     def matches_cluster(self,aread):
@@ -264,29 +270,68 @@ class ReadCluster:
         else:
             return self.iv.chrom < other.iv.chrom
 
-    def distance(self,other):
-        return max(self.iv.start-other.iv.end, other.iv.start-self.iv.end)
+    # def distance(self,other):
+    #     return max(self.iv.start-other.iv.end, other.iv.start-self.iv.end)
 
     def __str__(self):
         return "{0.iv.chrom}:{0.iv.start}-{0.iv.end} LENGTH:{0.iv.length} COUNT:{0.count} INSERT:{0.insertion_side} {0.insertion_point}".format(self)
 
-    def gap(self,other):
-        return (other.iv.start - self.iv.end)-1
+    @property
+    def insert_details(self):
+        print self.secondary_iv, self.secondary_iv.start, self.secondary_iv.end, self.secondary_iv.start_d, self.secondary_iv.end_d
+    # def gap(self,other):
+    #     return (other.iv.start - self.iv.end)-1
 
 
 class ClusterGroup:
+    Header = ("# type",
+              "ref_chrom",
+              "left_start_b1", "left_junction_b1", "left_numreads",
+              "gap_length", "insert_length",
+              "insert_chrom", "insert_start", "insert_end", "insert_strand",
+              "right_start_b1", "right_junction_b1","right_numreads")
     def __init__(self):
         pass
 
 class ClusterDoublet(ClusterGroup):
+    Type = "pair"
     def __init__(self,left_cluster, right_cluster):
         self.left = left_cluster
         self.right = right_cluster
-        self.gap = left_cluster.distance(right_cluster)
+        self.insert_iv = left_cluster.secondary_iv.copy()
+        self.insert_iv.extend_to_include(right_cluster.secondary_iv)
+        if left_cluster.secondary_iv.start > right_cluster.secondary_iv.start:
+            self.insert_iv.strand = "-"
+        else:
+            self.insert_iv.strand = "+"
+        # self.gap = left_cluster.distance(right_cluster)
 
     def __str__(self):
-        return "LEFT: {0}\nGAP: {1}\nRIGHT: {2}\n\n".format(self.left,self.gap,self.right)
+        return "LEFT: {0.left}\nGAP: {0.gap_length} INSERT: {0.insert_length} {0.insert_iv} \nRIGHT: {0.right}\n\n".format(self)
 
+    @property
+    def str_with_secondary(self):
+        return "LEFT: {0.left}, left_insert:{0.left.secondary_iv}\nGAP: {0.gap_length}\nRIGHT: {0.right}, right_insert: {0.right.secondary_iv}\n\n".format(self)
+
+    @property
+    def output(self):
+        # ref_chrom, left_start_b1, left_junction_b1, gap_length, insert_length, insert_strand, insert_chrom, insert_start, insert_end, right_start, right_junction
+        # print >>sys.stderr, "number of reads"; sys.exit(1)
+        return (self.__class__.Type,
+                self.left.iv.chrom,
+                self.left.iv.start, self.left.iv.end,self.left.count,
+                self.gap_length, self.insert_length,
+                self.insert_iv.chrom, self.insert_iv.start, self.insert_iv.end,self.insert_iv.strand,
+                self.right.iv.start, self.right.iv.end,self.right.count)
+
+    @property
+    def gap_length(self):
+        return self.right.iv.start-self.left.iv.end
+
+    @property
+    def insert_length(self):
+        return self.insert_iv.length
+    
     def get_features(self,cluster_number):
         left_iv = self.left.iv.copy()
         left_iv.strand="+"
@@ -320,11 +365,17 @@ class ClusterDoublet(ClusterGroup):
 
         
 class ClusterSingleton(ClusterGroup):
+    Type = "singleton"
     def __init__(self,singleton_cluster):
         self.singleton = singleton_cluster
+        self.iv = singleton_cluster.iv
 
     def __str__(self):
-        return "SINGLETON: {0}\n\n".format(self.singleton)
+        return "SINGLETON: {0.singleton}\n\n".format(self)
+
+    @property
+    def str_with_secondary(self):
+        return "SINGLETON: {0.singleton}, insert:{0.singleton.secondary_iv}\n\n".format(self)
 
     def get_features(self,cluster_number):
         singleton_iv = self.singleton.iv.copy()
@@ -350,8 +401,23 @@ class ClusterSingleton(ClusterGroup):
         
         return feature_list
 
+    @property
+    def output(self):
+        if self.singleton.insertion_side == RIGHT:
+            return (self.__class__.Type,
+                    self.iv.chrom,
+                    self.iv.start, self.iv.end,self.singleton.count,
+                    None, None,
+                    None,None,None,None,
+                    None,None,None)
+        elif self.singleton.insertion_side == LEFT:
+            return (self.__class__.Type,
+                    self.iv.chrom,
+                    None,None,None,
+                    None, None,
+                    None,None,None,None,
+                    self.iv.start, self.iv.end,self.singleton.count)
 
-    
 if __name__ == "__main__":
    main()
 

@@ -6,6 +6,7 @@ import re
 import os
 from Bio import SeqIO
 from find_insert_clusters import ReadCluster, filter_clusters, find_cluster_pairs, RIGHT, LEFT
+import csv
 
 cigar_re = re.compile("(d+)([mM])(d+)[F](d+)[mM]")
 
@@ -13,7 +14,9 @@ def current_work():
     todo_list = [
         "Need to handle indels better (max indel size?)",
         "Are all outputs base 1!!!!???",
-        "Formalize metacluster output.  Include insert length and gap length",
+        "Formalize metacluster output.  Include insert length, insert orientation, and gap length",
+        "Use original read information to get insert strand (normalized to ref on + strand) see ChimeraJunction.__init__",
+        "Fix false singletons (facing wrong direction, should be merged with adjacent cluster pair) :SINGLETON: ref0:9613-10000 LENGTH:387 COUNT:11 INSERT:left 9880, insert:insert0:[1808,2000)/. and SINGLETON: ref0:10004-10430 LENGTH:426 COUNT:16 INSERT:right 10247, insert:insert0:[0,302)/.",
         "harmonize iv with insertion_point (fix current difference in metacluster output)",
         "Handle meta clusters where constituent clusters overlap (small deletion)"
         ]
@@ -82,12 +85,21 @@ def main():
     for cluster in cluster_list:
         print "{0.count:<10} {0.range}".format(cluster)
 
-    print "NEEED TO MAKE VALUES base 1!!!!", "#"*50
-    cluster_group_list = find_cluster_pairs(cluster_list,args.maxgap)
-    print "NEEED TO MAKE VALUES base 1!!!!", "#"*50
-    for group in cluster_group_list:
-        print group
+    for cluster in cluster_list:
+        print "DETAILS", cluster.insert_details
 
+
+    print "NEEED TO MAKE VALUES base 1!!!!", "#"*50
+    metacluster_list = find_cluster_pairs(cluster_list,args.maxgap)
+    print "NEEED TO MAKE VALUES base 1!!!!", "#"*50
+    for metacluster in metacluster_list:
+        print metacluster.str_with_secondary
+
+    outwriter = csv.writer(sys.stdout,dialect=csv.excel)
+    outwriter.writerow(metacluster_list[0].__class__.Header)
+    for metacluster in metacluster_list:
+        # print metacluster.output
+        outwriter.writerow(metacluster.output)
 
 def find_chimeric_reads(sam_filename):
     junction_list = []

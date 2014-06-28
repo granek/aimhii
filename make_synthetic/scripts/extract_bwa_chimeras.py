@@ -9,6 +9,7 @@ from find_insert_clusters import ReadCluster, filter_clusters, find_cluster_pair
 import csv
 
 cigar_re = re.compile("(d+)([mM])(d+)[F](d+)[mM]")
+OPPOSITE_STRAND = {"+":"-", "-":"+"}
 
 def current_work():
     todo_list = [
@@ -18,7 +19,8 @@ def current_work():
         "Use original read information to get insert strand (normalized to ref on + strand) see ChimeraJunction.__init__",
         "Fix false singletons (facing wrong direction, should be merged with adjacent cluster pair) :SINGLETON: ref0:9613-10000 LENGTH:387 COUNT:11 INSERT:left 9880, insert:insert0:[1808,2000)/. and SINGLETON: ref0:10004-10430 LENGTH:426 COUNT:16 INSERT:right 10247, insert:insert0:[0,302)/.",
         "harmonize iv with insertion_point (fix current difference in metacluster output)",
-        "Handle meta clusters where constituent clusters overlap (small deletion)"
+        "Handle meta clusters where constituent clusters overlap (small deletion)",
+        "Handle SA CIGAR strings with multiple matches - look for Number of matches != 1"
         ]
     todo_list.insert(0, "="*80)
     todo_list.append("="*80)
@@ -145,10 +147,12 @@ def find_chimeric_reads(sam_filename):
                     rname,pos,strand,CIGAR,mapQ,NM = supline.split(",")
                     pos_b0 = int(pos)-1
                     if CIGAR.count("M") != 1:
-                        print "Number of matches != 1 " + CIGAR
+                        print "Number of matches != 1 ", CIGAR, "SKIPPING THIS ONE!!!", "LOOK INTO MERGING ACROSS DELETES?"
+                        continue
                     for op in HTSeq.parse_cigar(CIGAR, pos_b0, rname, strand): 
                         print op, op.query_from, op.query_to, op.ref_iv
                         if op.type == "M":
+                            print "appending:", op, op.query_from, op.query_to, op.ref_iv
                             read_parts.append(ReadFragment(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand))
                 read_parts.sort()
                 for part in read_parts:
@@ -165,7 +169,7 @@ def find_chimeric_reads(sam_filename):
                     #     r_junc = r_part.start_d
                     # print "junction: {0.rname}:{2}<->{1.rname}:{3}".format(l_part,r_part,l_junc,r_junc)
                     # junction_dict.setdefault(((l_chrom, l_junc),(r_chrom, r_junc)),set()).add(aread.qname)
-                    print cur_junction
+                    print cur_junction, cur_junction.readname
                     # junction_dict.setdefault(cur_junction,set()).add(aread.qname)
                     junction_list.append(cur_junction)
                 print ""
@@ -217,19 +221,38 @@ class ChimeraJunction:
         # self.r_chrom = r_part.rname
         # l_chrom = l_part.rname
         # r_chrom = r_part.rname
+
+        # HERE HERE HERE
+        # sys.exit(1)
+
+        print "l_part:", l_part, "r_part:", r_part
+        l_part.junc = l_part.start_d
+        l_part.distal = l_part.end_d
+        r_part.junc = r_part.end_d
+        r_part.distal = r_part.start_d
+       
         if (l_part.strand == "-") and (r_part.strand == "-"):
+            # l_part.strand = r_part.strand = "+"
             l_part.junc = l_part.start_d
-            l_part.end = l_part.end_d
+            l_part.distal = l_part.end_d
             r_part.junc = r_part.end_d
-            r_part.end = r_part.start_d
+            r_part.distal = r_part.start_d
+        # elif (l_part.strand == "-") and (r_part.strand == "-"):
+        #     l_part.strand = r_part.strand = "+"
+        #     l_part.junc = l_part.start_d
+        #     l_part.end = l_part.end_d
+        #     r_part.junc = r_part.end_d
+        #     r_part.end = r_part.start_d
         else:
             l_part.junc = l_part.end_d
             r_part.junc = r_part.start_d
-            l_part.end = l_part.start_d
-            r_part.end = r_part.end_d
+            l_part.distal = l_part.start_d
+            r_part.distal = r_part.end_d
 
-        if (l_part.rname == ChimeraJunction.InsertSeqID) or (r_part.rname == ChimeraJunction.InsertSeqID) and (l_part.rname != r_part.rname):
-            # Organize in the relative to reference chrom, not insert
+        if (((l_part.rname == ChimeraJunction.InsertSeqID) or
+            (r_part.rname == ChimeraJunction.InsertSeqID)) and
+            (l_part.rname != r_part.rname)):
+            # Organize relative to reference chrom, not insert
             if l_part.rname == ChimeraJunction.InsertSeqID:
                 self.primary_frag = r_part # ref_part = r_part
                 self.secondary_frag = l_part # insert_part = l_part
@@ -247,26 +270,30 @@ class ChimeraJunction:
         else:
             raise StandardError
         
-        if self.primary_frag.junc > self.primary_frag.end:
+        if self.primary_frag.junc > self.primary_frag.distal:
             # junction is at right end of ref fragment
-            self.chrom1, self.junc1, self.end1 = self.primary_frag.rname, self.primary_frag.junc, self.primary_frag.end
-            self.chrom2, self.junc2, self.end2 = self.secondary_frag.rname, self.secondary_frag.junc, self.secondary_frag.end
+            self.chrom1, self.junc1, self.distal1 = self.primary_frag.rname, self.primary_frag.junc, self.primary_frag.distal
+            self.chrom2, self.junc2, self.distal2 = self.secondary_frag.rname, self.secondary_frag.junc, self.secondary_frag.distal
             self.insert_point = self.primary_frag.junc
             self.insert_side = RIGHT
         else:
             # junction is at left end of ref fragment
-            self.chrom1, self.junc1, self.end1 = self.secondary_frag.rname, self.secondary_frag.junc, self.secondary_frag.end
-            self.chrom2, self.junc2, self.end2 = self.primary_frag.rname, self.primary_frag.junc, self.primary_frag.end
+            self.chrom1, self.junc1, self.distal1 = self.secondary_frag.rname, self.secondary_frag.junc, self.secondary_frag.distal
+            self.chrom2, self.junc2, self.distal2 = self.primary_frag.rname, self.primary_frag.junc, self.primary_frag.distal
             self.insert_side = LEFT
         self.insert_point = self.primary_frag.junc
 
+        if self.primary_frag.strand == "-":
+            self.primary_frag.strand = "+"
+            self.secondary_frag.strand = OPPOSITE_STRAND[self.secondary_frag.strand]
         # elif l_part.rname < r_part.rname:
         #     self.chrom1, self.junc1, self.end1 = l_chrom, l_part.junc, l_part.end
         #     self.chrom2, self.junc2, self.end2 = r_chrom, r_part.junc, r_part.end
         # else:
         #     self.chrom1, self.junc1, self.end1 = r_chrom, r_part.junc, r_part.end
         #     self.chrom2, self.junc2, self.end2 = l_chrom, l_part.junc, l_part.end
-        self.iv = self.primary_frag.iv
+        # self.iv = self.primary_frag.iv
+        self.iv = self.primary_frag
            
         print "junction: {0.rname}:{0.junc}<->{1.rname}:{1.junc}".format(l_part,r_part)
         # junction_dict.setdefault(((l_chrom, l_junc),(r_chrom, r_junc)),set()).add(aread.qname)
@@ -305,39 +332,53 @@ class ChimeraJunction:
         elif self.secondary_frag.junc > other.secondary_frag.junc:
             return False
         #--------------------------------------------------
-        elif self.primary_frag.end < other.primary_frag.end:
+        elif self.primary_frag.distal < other.primary_frag.distal:
             return True
-        elif self.primary_frag.end > other.primary_frag.end:
+        elif self.primary_frag.distal > other.primary_frag.distal:
             return False
-        elif self.secondary_frag.end < other.secondary_frag.end:
+        elif self.secondary_frag.distal < other.secondary_frag.distal:
             return True
-        elif self.secondary_frag.end > other.secondary_frag.end:
+        elif self.secondary_frag.distal > other.secondary_frag.distal:
             return False
         else:
             return self.readname < other.readname
 
 
-class ReadFragment:
+class ReadFragment(HTSeq.GenomicInterval):
     def __init__(self,qstart,qend,pos,aend,rname,strand):
         self.qstart = qstart
         self.qend = qend
-        self.pos = pos+1
-        self.aend = aend
+        # self.pos = pos+1
+        # self.aend = aend
         self.rname = rname
-        self.strand = strand
-        if strand == "-":
-            self.start_d = self.aend
-            self.end_d = self.pos
-        else:
-            self.start_d = self.pos
-            self.end_d = self.aend
-        self.iv = HTSeq.GenomicInterval(rname,pos,aend, strand)
+        super(ReadFragment,self).__init__(rname,pos,aend,strand)
+        print "SUPER", super(ReadFragment,self).__str__()
+        # self.strand = strand
+        # if strand == "-":
+        #     self.start_d = self.aend
+        #     self.end_d = self.pos
+        # else:
+        #     self.start_d = self.pos
+        #     self.end_d = self.aend
+        # self._iv = HTSeq.GenomicInterval(rname,pos,aend, strand)
     def __lt__(self,other):
-        return self.qstart < other.qstart
+        return self.start < other.start
 
     def __str__(self):
-        return "Q:{0.qstart}-{0.qend} -> {0.rname}:{0.pos}-{0.aend}{0.strand} ({0.start_d}-{0.end_d})".format(self)
-    
+        return "Q:{0.qstart}-{0.qend} -> {0.rname}:{0.start}-{0.end}{0.strand} ({0.start_d}-{0.end_d})".format(self)
+
+    # @property
+    # def strand(self):
+    #     return self._iv.strand
+
+    # @strand.setter
+    # def strand(self, value):
+    #     self._iv.strand = value
+
+    # @property
+    # def end_d(self):
+    #     return self._iv.end_d
+
     # @property
     # def range(self):
     #     return "{0.chrom}:{0.start}-{0.end}".format(self.iv)

@@ -178,9 +178,10 @@ class ReadCluster:
     def __init__(self,aread):
         self.read_list = [aread]
         self.secondary_name = aread.secondary_frag.rname
-        # print aread
+        print >>sys.stderr, aread, "||",  aread.iv, "||", repr(aread.iv), "||", aread.readname
         self.iv = aread.iv.copy()
-        self.secondary_iv = aread.secondary_frag.iv.copy()
+        # self.secondary_iv = aread.secondary_frag.iv.copy()
+        self.secondary_iv = aread.secondary_frag.copy()
         print "INIT CHECK STRAND", self.iv, self.secondary_iv
         self.iv.strand = self.secondary_iv.strand = "."
         self._insert_point = aread.insert_point
@@ -190,11 +191,11 @@ class ReadCluster:
         # print "self.iv", self.iv, type(self.iv)
         # print "aread", aread
         # print "aread.iv", aread.iv, type(aread.iv)
-        print "ADD CHECK STRAND", aread.iv, aread.secondary_frag.iv
+        print "ADD CHECK STRAND", aread.iv, aread.secondary_frag, aread.readname
 
         self.iv.extend_to_include(aread.iv)
         # print >>sys.stderr, self.secondary_iv
-        self.secondary_iv.extend_to_include(aread.secondary_frag.iv)
+        self.secondary_iv.extend_to_include(aread.secondary_frag)
         self.read_list.append(aread)
 
     def matches_cluster(self,aread):

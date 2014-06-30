@@ -182,7 +182,7 @@ class ReadCluster:
         self.iv = aread.iv.copy()
         # self.secondary_iv = aread.secondary_frag.iv.copy()
         self.secondary_iv = aread.secondary_frag.copy()
-        print "INIT CHECK STRAND", self.iv, self.secondary_iv
+        print "INIT CHECK STRAND", aread.iv, aread.secondary_frag, aread.insert_side, aread.insert_point, aread.readname
         self.iv.strand = self.secondary_iv.strand = "."
         self._insert_point = aread.insert_point
         self._insert_side = aread.insert_side
@@ -191,7 +191,7 @@ class ReadCluster:
         # print "self.iv", self.iv, type(self.iv)
         # print "aread", aread
         # print "aread.iv", aread.iv, type(aread.iv)
-        print "ADD CHECK STRAND", aread.iv, aread.secondary_frag, aread.readname
+        print "ADD CHECK STRAND", aread.iv, aread.secondary_frag, aread.insert_side, aread.insert_point, aread.readname
 
         self.iv.extend_to_include(aread.iv)
         # print >>sys.stderr, self.secondary_iv

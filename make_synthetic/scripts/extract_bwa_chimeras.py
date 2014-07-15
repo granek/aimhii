@@ -9,7 +9,7 @@ from find_insert_clusters import ReadCluster, filter_clusters, find_cluster_pair
 import csv
 from operator import attrgetter
 
-cigar_re = re.compile("(d+)([mM])(d+)[F](d+)[mM]")
+# cigar_re = re.compile("(d+)([mM])(d+)[F](d+)[mM]")
 OPPOSITE_STRAND = {"+":"-", "-":"+"}
 OPPOSITE_SIDE = {RIGHT:LEFT, LEFT:RIGHT} 
 def current_work():
@@ -142,7 +142,9 @@ def find_chimeric_reads(sam_filename):
                     strand = "-"
                 else:
                     strand = "+"
-                read_parts = [ReadFragment(aread.qstart,aread.qend,aread.pos,aread.aend,rname,strand)]
+                primary_frag = ReadFragment(aread.qstart,aread.qend,aread.pos,aread.aend,rname,strand) 
+                read_parts = [primary_frag]
+                primary_qiv = HTSeq.GenomicInterval("dummy", aread.qstart,aread.qend, ".")
                 for supline in sa_list:
                     print supline
                     rname,pos,strand,CIGAR,mapQ,NM = supline.split(",")
@@ -150,11 +152,29 @@ def find_chimeric_reads(sam_filename):
                     if CIGAR.count("M") != 1:
                         print "Number of matches != 1 ", CIGAR, "SKIPPING THIS ONE!!!", "LOOK INTO MERGING ACROSS DELETES?"
                         continue
+                    ##============================================================
+                    # Check for Matches that overlap with primary frag on query
+                    for op in HTSeq.parse_cigar(CIGAR, pos_b0, rname, strand):
+                         if op.type == "M":
+                            suppl_qiv = HTSeq.GenomicInterval("dummy", op.query_from, op.query_to, ".")
+                            if primary_qiv.overlaps(suppl_qiv):
+                                print "Overlap detected.  Checking if suppl CIGAR should be reversed"
+                                overlap_len = 1+(min(primary_qiv.end,suppl_qiv.end) - max(primary_qiv.start,suppl_qiv.start))
+                                smallest_len = min((primary_qiv.length,suppl_qiv.length))
+                                print "overlap_len: {0} smallest_len: {1}".format(overlap_len, smallest_len)
+                                if (overlap_len > smallest_len/2.0):
+                                    # if the overlap is more than half of the shortest frag . . . 
+                                    print "BWA Chimera PROBLEM: primary query overlaps suppl query", primary_frag, suppl_frag
+                                    CIGAR = "".join(reversed(re.findall("\d+[MIDNSHP=X]", CIGAR)))
+                                    break
+                    ##============================================================
                     for op in HTSeq.parse_cigar(CIGAR, pos_b0, rname, strand): 
                         print op, op.query_from, op.query_to, op.ref_iv
                         if op.type == "M":
                             print "appending:", op, op.query_from, op.query_to, op.ref_iv
-                            read_parts.append(ReadFragment(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand))
+                            suppl_frag = ReadFragment(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand)
+                            read_parts.append(suppl_frag)
+                    ##============================================================
                 read_parts.sort(key=attrgetter('qstart'))
                 for part in read_parts:
                     print part
@@ -231,22 +251,46 @@ class ChimeraJunction:
         # l_part.distal = l_part.end_d
         # r_part.junc = r_part.end_d
         # r_part.distal = r_part.start_d
-       
-        l_part.distal = l_part.start
-        l_part.junc = l_part.end
+        ##==================================================
+        if (((l_part.rname == ChimeraJunction.InsertSeqID) or
+            (r_part.rname == ChimeraJunction.InsertSeqID)) and
+            (l_part.rname != r_part.rname)):
+            # Organize relative to reference chrom, not insert
+            if l_part.rname == ChimeraJunction.InsertSeqID:
+                self.primary_frag = r_part # ref_part = r_part
+                self.secondary_frag = l_part # insert_part = l_part
+            else:
+                self.primary_frag = l_part # insert_part
+                self.secondary_frag = r_part # ref_part
+            # self.primary_frag = ref_part
+            # self.secondary_frag = insert_part
+        elif l_part.rname < r_part.rname or (l_part.rname == r_part.rname and l_part.start < r_part.start):
+            self.primary_frag = l_part
+            self.secondary_frag = r_part
+        elif l_part.rname > r_part.rname or (l_part.rname == r_part.rname and l_part.start > r_part.start):
+            self.primary_frag = r_part
+            self.secondary_frag = l_part
+        else:
+            raise StandardError
+        ##==================================================
 
-        r_part.junc = r_part.start
-        r_part.distal = r_part.end
+        if (l_part.strand ==  r_part.strand):
+            l_part.distal = l_part.start
+            l_part.junc = l_part.end
 
-        if l_part.strand == "+" and r_part.strand == "-":
-            r_part.junc = r_part.end
-            r_part.distal = r_part.start
-
-        if l_part.strand == "-" and r_part.strand == "+":
-            r_part.junc = r_part.end
-            r_part.distal = r_part.start
-
-            
+            r_part.junc = r_part.start
+            r_part.distal = r_part.end
+        else: # (l_part.strand !=  r_part.strand):
+            if self.primary_frag == l_part:
+                r_part.junc = r_part.end
+                r_part.distal = r_part.start
+                l_part.junc = l_part.end
+                l_part.distal = l_part.start
+            else: # self.primary_frag == r_part:
+                l_part.junc = l_part.start
+                r_part.junc = r_part.start
+                r_part.distal = r_part.end
+                l_part.distal = l_part.end
 
         # if l_part.strand == "+":
         #     l_part.distal = l_part.start
@@ -280,27 +324,6 @@ class ChimeraJunction:
         #     print "else", l_part.distal, l_part.junc, r_part.junc, r_part.distal, "::", l_part.start, l_part.end, r_part.start, r_part.end
 
 
-        if (((l_part.rname == ChimeraJunction.InsertSeqID) or
-            (r_part.rname == ChimeraJunction.InsertSeqID)) and
-            (l_part.rname != r_part.rname)):
-            # Organize relative to reference chrom, not insert
-            if l_part.rname == ChimeraJunction.InsertSeqID:
-                self.primary_frag = r_part # ref_part = r_part
-                self.secondary_frag = l_part # insert_part = l_part
-            else:
-                self.primary_frag = l_part # insert_part
-                self.secondary_frag = r_part # ref_part
-            # self.primary_frag = ref_part
-            # self.secondary_frag = insert_part
-        elif l_part.rname < r_part.rname or (l_part.rname == r_part.rname and l_part.start < r_part.start):
-            self.primary_frag = l_part
-            self.secondary_frag = r_part
-        elif l_part.rname > r_part.rname or (l_part.rname == r_part.rname and l_part.start > r_part.start):
-            self.primary_frag = r_part
-            self.secondary_frag = l_part
-        else:
-            raise StandardError
-        
         if self.primary_frag.junc > self.primary_frag.distal:
             # junction is at right end of ref fragment
             print "primary_frag.junc > self.primary_frag.distal", self.primary_frag, self.primary_frag.junc, self.secondary_frag, self.secondary_frag.junc
@@ -332,11 +355,11 @@ class ChimeraJunction:
         # self.iv = self.primary_frag.iv
         self.iv = self.primary_frag
            
-        print "junction: {0.rname}:{0.junc}<->{1.rname}:{1.junc}".format(self.primary_frag,self.secondary_frag)
+        print "junction: {0.primary_frag.rname}:{0.primary_frag.junc}<->{0.secondary_frag.rname}:{0.secondary_frag.junc} insert_side:{0.insert_side}".format(self)
         # junction_dict.setdefault(((l_chrom, l_junc),(r_chrom, r_junc)),set()).add(aread.qname)
 
     def __str__(self):
-        return "{0.chrom1}:{0.junc1}~{0.chrom2}:{0.junc2}".format(self)
+        return "{0.chrom1}:{0.junc1}~{0.chrom2}:{0.junc2} insert:{0.insert_side}".format(self)
 
     # def __hash__(self):
     #     # return hash((self.l_chrom, self.l_junc),(self.r_chrom, self.r_junc))

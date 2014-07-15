@@ -182,7 +182,7 @@ class ReadCluster:
         self.iv = aread.iv.copy()
         # self.secondary_iv = aread.secondary_frag.iv.copy()
         self.secondary_iv = aread.secondary_frag.copy()
-        print "INIT CHECK STRAND", aread.iv, aread.secondary_frag, aread.insert_side, aread.insert_point, aread.readname
+        print "-"*60, "\nINIT CHECK STRAND", aread.iv, aread.secondary_frag, aread.insert_side, aread.insert_point, aread.readname
         self.iv.strand = self.secondary_iv.strand = "."
         self._insert_point = aread.insert_point
         self._insert_side = aread.insert_side

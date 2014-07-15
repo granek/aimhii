@@ -11,7 +11,9 @@ from operator import attrgetter
 
 # cigar_re = re.compile("(d+)([mM])(d+)[F](d+)[mM]")
 OPPOSITE_STRAND = {"+":"-", "-":"+"}
-OPPOSITE_SIDE = {RIGHT:LEFT, LEFT:RIGHT} 
+OPPOSITE_SIDE = {RIGHT:LEFT, LEFT:RIGHT}
+MINUS = "-";PLUS = "+"
+
 def current_work():
     todo_list = [
         "Need to handle indels better (max indel size?)",
@@ -137,44 +139,20 @@ def find_chimeric_reads(sam_filename):
 
             rname = samfile.getrname(aread.tid)
             if (aread.flag & 0x900) == 0 : #read is primary
-                print "{0.qname:20} r{3} {4}\t{1}:{0.pos}-{0.aend}[{0.alen}]\tQ:{0.qstart}-{0.qend}[{0.qlen}]\t{0.cigarstring:10}\tSA<{2}>".format(aread,rname, sa_list,readnum,line_type)
                 if aread.is_reverse:
-                    strand = "-"
+                    primary_strand = MINUS
                 else:
-                    strand = "+"
-                primary_frag = ReadFragment(aread.qstart,aread.qend,aread.pos,aread.aend,rname,strand) 
-                read_parts = [primary_frag]
-                primary_qiv = HTSeq.GenomicInterval("dummy", aread.qstart,aread.qend, ".")
+                    primary_strand = PLUS
+                print "{0.qname:20} r{3} {4}\t{1}:{0.pos}-{0.aend}[{0.alen}]\tQ:{0.qstart}-{0.qend}[{0.qlen}]\t{5}{0.cigarstring:10}\tSA<{2}>".format(aread,rname, sa_list,readnum,line_type,primary_strand)
+                read_parts = ReadFragment.listFromCIGAR(aread.cigarstring, aread.pos, rname, primary_strand)
                 for supline in sa_list:
                     print supline
-                    rname,pos,strand,CIGAR,mapQ,NM = supline.split(",")
+                    rname,pos,sup_strand,CIGAR,mapQ,NM = supline.split(",")
                     pos_b0 = int(pos)-1
                     if CIGAR.count("M") != 1:
                         print "Number of matches != 1 ", CIGAR, "SKIPPING THIS ONE!!!", "LOOK INTO MERGING ACROSS DELETES?"
                         continue
-                    ##============================================================
-                    # Check for Matches that overlap with primary frag on query
-                    for op in HTSeq.parse_cigar(CIGAR, pos_b0, rname, strand):
-                         if op.type == "M":
-                            suppl_qiv = HTSeq.GenomicInterval("dummy", op.query_from, op.query_to, ".")
-                            if primary_qiv.overlaps(suppl_qiv):
-                                print "Overlap detected.  Checking if suppl CIGAR should be reversed"
-                                overlap_len = 1+(min(primary_qiv.end,suppl_qiv.end) - max(primary_qiv.start,suppl_qiv.start))
-                                smallest_len = min((primary_qiv.length,suppl_qiv.length))
-                                print "overlap_len: {0} smallest_len: {1}".format(overlap_len, smallest_len)
-                                if (overlap_len > smallest_len/2.0):
-                                    # if the overlap is more than half of the shortest frag . . . 
-                                    print "BWA Chimera PROBLEM: primary query overlaps suppl query", primary_frag, suppl_frag
-                                    CIGAR = "".join(reversed(re.findall("\d+[MIDNSHP=X]", CIGAR)))
-                                    break
-                    ##============================================================
-                    for op in HTSeq.parse_cigar(CIGAR, pos_b0, rname, strand): 
-                        print op, op.query_from, op.query_to, op.ref_iv
-                        if op.type == "M":
-                            print "appending:", op, op.query_from, op.query_to, op.ref_iv
-                            suppl_frag = ReadFragment(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand)
-                            read_parts.append(suppl_frag)
-                    ##============================================================
+                    read_parts.extend(ReadFragment.listFromCIGAR(CIGAR, pos_b0, rname, sup_strand))
                 read_parts.sort(key=attrgetter('qstart'))
                 for part in read_parts:
                     print part
@@ -428,6 +406,20 @@ class ReadFragment(HTSeq.GenomicInterval):
 
     def __str__(self):
         return "Q:{0.qstart}-{0.qend} -> {0.rname}:{0.start}-{0.end}{0.strand} ({0.start_d}-{0.end_d})".format(self)
+
+    @classmethod
+    def listFromCIGAR(cls, cigarstring,position_b0, refname, strand):
+        read_parts = []
+        if strand == MINUS: # need to reverse the CIGAR
+            print "Reversing CIGAR for minus strand read fragment"
+            cigarstring = "".join(reversed(re.findall("\d+[MIDNSHP=X]", cigarstring)))
+        for op in HTSeq.parse_cigar(cigarstring, position_b0, refname, strand):
+            print op, op.query_from, op.query_to, op.ref_iv
+            if op.type == "M":
+                print "appending:", op, op.query_from, op.query_to, op.ref_iv
+                suppl_frag = cls(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand)
+                read_parts.append(suppl_frag)
+        return read_parts
 
     # @property
     # def strand(self):

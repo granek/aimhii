@@ -159,18 +159,7 @@ def find_chimeric_reads(sam_filename):
                     print part
                 for i in range(len(read_parts)-1):
                     cur_junction = ChimeraJunction(read_parts[i],read_parts[i+1],aread.qname)
-                    # l_chrom = l_part.rname
-                    # r_chrom = r_part.rname
-                    # if (l_part.strand == "-") and (r_part.strand == "-"):
-                    #     l_junc = l_part.start_d
-                    #     r_junc = r_part.end_d
-                    # else:
-                    #     l_junc = l_part.end_d
-                    #     r_junc = r_part.start_d
-                    # print "junction: {0.rname}:{2}<->{1.rname}:{3}".format(l_part,r_part,l_junc,r_junc)
-                    # junction_dict.setdefault(((l_chrom, l_junc),(r_chrom, r_junc)),set()).add(aread.qname)
                     print cur_junction, cur_junction.readname
-                    # junction_dict.setdefault(cur_junction,set()).add(aread.qname)
                     junction_list.append(cur_junction)
                 print ""
             else:
@@ -209,27 +198,12 @@ def cluster_junctions(junction_list):
         if not added_to_cluster:
             # aread doesn't overlap cur_cluster, so time to start a new cluster
             cluster_list.append(ReadCluster(cur_junction))
-    # cluster_list.append(cur_cluster)
-    # print cur_cluster.range, cur_cluster.count
     return cluster_list
 
 class ChimeraJunction:
     InsertSeqID = None
     def __init__(self,l_part,r_part,qname):
         self.readname = qname
-        # self.l_chrom = l_part.rname
-        # self.r_chrom = r_part.rname
-        # l_chrom = l_part.rname
-        # r_chrom = r_part.rname
-
-        # HERE HERE HERE
-        # sys.exit(1)
-
-        # print "l_part:", l_part, "r_part:", r_part
-        # l_part.junc = l_part.start_d
-        # l_part.distal = l_part.end_d
-        # r_part.junc = r_part.end_d
-        # r_part.distal = r_part.start_d
 
         ##========================
         ## Select primary fragment
@@ -244,8 +218,6 @@ class ChimeraJunction:
             else:
                 self.primary_frag = l_part # insert_part
                 self.secondary_frag = r_part # ref_part
-            # self.primary_frag = ref_part
-            # self.secondary_frag = insert_part
         elif l_part.rname < r_part.rname or (l_part.rname == r_part.rname and l_part.start < r_part.start):
             self.primary_frag = l_part
             self.secondary_frag = r_part
@@ -298,121 +270,21 @@ class ChimeraJunction:
         else:
             raise StandardError, "Problem with strand combinations"
 
-
-        # elif self.primary_frag.strand == MINUS:
-        #     self.primary_frag.strand = PLUS
-        #     if self.secondary_frag.strand == PLUS:
-        #         # self.insert_side = OPPOSITE_SIDE[self.insert_side]
-        #         self.secondary_frag.strand = MINUS
-        #     else:
-        #         self.secondary_frag.strand = PLUS
-
         self.l_frag = l_part
         self.r_frag = r_part
         if self.primary_frag == l_part:
-            # self.chrom1 = self.primary_frag.chrom
-            # self.chrom2 = self.secondary_frag.chrom
             self.insert_side = RIGHT
         else:
-            # self.chrom1 = self.secondary_frag.chrom
-            # self.chrom2 = self.primary_frag.chrom
             self.insert_side = LEFT
             
         self.insert_point = self.l_frag.junc
 
-
-        #         if self.primary_frag.junc > self.primary_frag.distal:
-        #     # junction is at right end of ref fragment
-        #     print "primary_frag.junc > self.primary_frag.distal", self.primary_frag, self.primary_frag.junc, self.secondary_frag, self.secondary_frag.junc
-        #     self.chrom1, self.junc1, self.distal1 = self.primary_frag.rname, self.primary_frag.junc, self.primary_frag.distal
-        #     self.chrom2, self.junc2, self.distal2 = self.secondary_frag.rname, self.secondary_frag.junc, self.secondary_frag.distal
-        #     self.insert_point = self.primary_frag.junc
-        #     self.insert_side = RIGHT
-        # else:
-        #     # junction is at left end of ref fragment
-        #     print "primary_frag.junc < self.primary_frag.distal", self.primary_frag, self.primary_frag.junc, self.secondary_frag, self.secondary_frag.junc
-        #     self.chrom1, self.junc1, self.distal1 = self.secondary_frag.rname, self.secondary_frag.junc, self.secondary_frag.distal
-        #     self.chrom2, self.junc2, self.distal2 = self.primary_frag.rname, self.primary_frag.junc, self.primary_frag.distal
-        #     self.insert_side = LEFT
-        # self.insert_point = self.primary_frag.junc
-
-
-        # if (l_part.strand ==  r_part.strand):
-        #     l_part.distal = l_part.start
-        #     l_part.junc = l_part.end
-
-        #     r_part.junc = r_part.start
-        #     r_part.distal = r_part.end
-        # else: # (l_part.strand !=  r_part.strand):
-        #     if self.primary_frag == l_part:
-        #         r_part.junc = r_part.end
-        #         r_part.distal = r_part.start
-        #         l_part.junc = l_part.end
-        #         l_part.distal = l_part.start
-        #     else: # self.primary_frag == r_part:
-        #         l_part.junc = l_part.start
-        #         r_part.junc = r_part.start
-        #         r_part.distal = r_part.end
-        #         l_part.distal = l_part.end
-
-        # if l_part.strand == "+":
-        #     l_part.distal = l_part.start
-        #     l_part.junc = l_part.end
-        # else: # l_part.strand == "-"
-        #     l_part.distal = l_part.end
-        #     l_part.junc = l_part.start
-
-        # if r_part.strand == "+":
-        #     r_part.junc = r_part.start
-        #     r_part.distal = r_part.end
-        # else: # r_part.strand == "-"
-        #     r_part.junc = r_part.end
-        #     r_part.distal = r_part.start
-            
         print "l.distal:{0.distal} l.junc:{0.junc} r.junc:{1.junc} r.distal:{1.distal}".format(l_part,r_part)
         print "l.start:{0.start} l.end:{0.end} r.start:{1.start} r.end:{1.end}".format(l_part,r_part)
 
-        # # print '(l_part.strand == "-") and (r_part.strand == "-")', l_part.distal, l_part.junc, r_part.junc, r_part.distal, "::", l_part.start, l_part.end, r_part.start, r_part.end
-        # elif (l_part.strand == "-") and (r_part.strand == "+"):
-        # #     l_part.strand = r_part.strand = "+"
-        # #     l_part.junc = l_part.start_d
-        # #     l_part.end = l_part.end_d
-        # #     r_part.junc = r_part.end_d
-        # #     r_part.end = r_part.start_d
-        # else:
-        #     l_part.junc = l_part.end_d
-        #     r_part.junc = r_part.start_d
-        #     l_part.distal = l_part.start_d
-        #     r_part.distal = r_part.end_d
-        #     print "else", l_part.distal, l_part.junc, r_part.junc, r_part.distal, "::", l_part.start, l_part.end, r_part.start, r_part.end
-
-
-        # if self.primary_frag.junc > self.primary_frag.distal:
-        #     # junction is at right end of ref fragment
-        #     print "primary_frag.junc > self.primary_frag.distal", self.primary_frag, self.primary_frag.junc, self.secondary_frag, self.secondary_frag.junc
-        #     self.chrom1, self.junc1, self.distal1 = self.primary_frag.rname, self.primary_frag.junc, self.primary_frag.distal
-        #     self.chrom2, self.junc2, self.distal2 = self.secondary_frag.rname, self.secondary_frag.junc, self.secondary_frag.distal
-        #     self.insert_point = self.primary_frag.junc
-        #     self.insert_side = RIGHT
-        # else:
-        #     # junction is at left end of ref fragment
-        #     print "primary_frag.junc < self.primary_frag.distal", self.primary_frag, self.primary_frag.junc, self.secondary_frag, self.secondary_frag.junc
-        #     self.chrom1, self.junc1, self.distal1 = self.secondary_frag.rname, self.secondary_frag.junc, self.secondary_frag.distal
-        #     self.chrom2, self.junc2, self.distal2 = self.primary_frag.rname, self.primary_frag.junc, self.primary_frag.distal
-        #     self.insert_side = LEFT
-        # self.insert_point = self.primary_frag.junc
-
-        # elif l_part.rname < r_part.rname:
-        #     self.chrom1, self.junc1, self.end1 = l_chrom, l_part.junc, l_part.end
-        #     self.chrom2, self.junc2, self.end2 = r_chrom, r_part.junc, r_part.end
-        # else:
-        #     self.chrom1, self.junc1, self.end1 = r_chrom, r_part.junc, r_part.end
-        #     self.chrom2, self.junc2, self.end2 = l_chrom, l_part.junc, l_part.end
-        # self.iv = self.primary_frag.iv
         self.iv = self.primary_frag
            
         print "junction: {0.primary_frag.rname}:{0.primary_frag.junc}<->{0.secondary_frag.rname}:{0.secondary_frag.junc} insert_side:{0.insert_side}".format(self)
-        # junction_dict.setdefault(((l_chrom, l_junc),(r_chrom, r_junc)),set()).add(aread.qname)
 
     def __str__(self):
         return "{0.l_frag.chrom}:{0.l_frag.junc}~{0.r_frag.chrom}:{0.r_frag.junc} insert:{0.insert_side}".format(self)
@@ -464,19 +336,10 @@ class ReadFragment(HTSeq.GenomicInterval):
     def __init__(self,qstart,qend,pos,aend,rname,strand):
         self.qstart = qstart
         self.qend = qend
-        # self.pos = pos+1
-        # self.aend = aend
         self.rname = rname
         super(ReadFragment,self).__init__(rname,pos,aend,strand)
         print "SUPER", super(ReadFragment,self).__str__()
-        # self.strand = strand
-        # if strand == "-":
-        #     self.start_d = self.aend
-        #     self.end_d = self.pos
-        # else:
-        #     self.start_d = self.pos
-        #     self.end_d = self.aend
-        # self._iv = HTSeq.GenomicInterval(rname,pos,aend, strand)
+
     def __lt__(self,other):
         # this is important for ordering fragments in find_chimeric_reads()
         # return self.qstart < other.qstart
@@ -498,40 +361,6 @@ class ReadFragment(HTSeq.GenomicInterval):
                 suppl_frag = cls(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand)
                 read_parts.append(suppl_frag)
         return read_parts
-
-    # @property
-    # def strand(self):
-    #     return self._iv.strand
-
-    # @strand.setter
-    # def strand(self, value):
-    #     self._iv.strand = value
-
-    # @property
-    # def end_d(self):
-    #     return self._iv.end_d
-
-    # @property
-    # def range(self):
-    #     return "{0.chrom}:{0.start}-{0.end}".format(self.iv)
-    #     # return self.iv
-
-    # @property
-    # def count(self):
-    #     return len(self.read_list)
-
-    # @property
-    # def insertion_point(self):
-    #     if self._insert_point == None:
-    #         self._determine_insertion_point()
-    #     return self._insert_point
-
-    # @property
-    # def insertion_side(self):
-    #     if self._insert_side == None:
-    #         self._determine_insertion_point()
-    #     return self._insert_side
-
 
 if __name__ == "__main__":
     current_work()

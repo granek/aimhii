@@ -153,9 +153,9 @@ def find_chimeric_reads(sam_filename):
                     print supline
                     rname,pos,sup_strand,CIGAR,mapQ,NM = supline.split(",")
                     pos_b0 = int(pos)-1
-                    if CIGAR.count("M") != 1:
-                        print "Number of matches != 1 ", CIGAR, "SKIPPING THIS ONE!!!", "LOOK INTO MERGING ACROSS DELETES?"
-                        continue
+                    # if CIGAR.count("M") != 1:
+                    #     print "Number of matches != 1 ", CIGAR, "SKIPPING THIS ONE!!!", "LOOK INTO MERGING ACROSS DELETES?"
+                    #     continue
                     read_parts.extend(ReadFragment.listFromCIGAR(CIGAR, pos_b0, rname, sup_strand))
                 read_parts.sort(key=attrgetter('qstart'))
                 for part in read_parts:
@@ -330,18 +330,47 @@ class ReadFragment(HTSeq.GenomicInterval):
     def __str__(self):
         return "Q:{0.qstart}-{0.qend} -> {0.rname}:{0.start}-{0.end}{0.strand} ({0.start_d}-{0.end_d})".format(self)
 
+    def extend(self,qstart,qend,pos,aend,rname,strand):
+        """Extend ReadFragment to include portion beyond a delete"""
+        if self.rname != rname:
+            raise StandardError, "Incompatible reference sequences: {0} != {1}".format(self.rname, rname)
+        elif self.strand != strand:
+            raise StandardError, "Incompatible strands: {0} != {1}".format(self.strand, strand)
+        else:
+            print "Before extension: {0}".format(self)
+            self.qstart = min(self.qstart,qstart)
+            self.qend = max(self.qend,qend)
+            new_iv = HTSeq.GenomicInterval(rname,pos,aend,strand)
+            print "new_iv:", new_iv
+            self.extend_to_include(new_iv)
+            print "After extension: {0}".format(self)
+        # raise NotImplementedError
+
     @classmethod
     def listFromCIGAR(cls, cigarstring,position_b0, refname, strand):
         read_parts = []
         if strand == MINUS: # need to reverse the CIGAR
             print "Reversing CIGAR for minus strand read fragment"
             cigarstring = "".join(reversed(re.findall("\d+[MIDNSHP=X]", cigarstring)))
+
+        op_type_list = []
         for op in HTSeq.parse_cigar(cigarstring, position_b0, refname, strand):
             print op, op.query_from, op.query_to, op.ref_iv
             if op.type == "M":
-                print "appending:", op, op.query_from, op.query_to, op.ref_iv
-                suppl_frag = cls(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand)
-                read_parts.append(suppl_frag)
+                if "M" in op_type_list:
+                    if len(op_type_list) >=2 and op_type_list[-1] == "D" and op_type_list[-2] == "M":
+                        print "extending (D):", op, op.query_from, op.query_to, op.ref_iv
+                        read_parts[-1].extend(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand)
+                    elif len(op_type_list) >=2 and op_type_list[-1] == "I" and op_type_list[-2] == "M":
+                        print "extending (I):", op, op.query_from, op.query_to, op.ref_iv
+                        read_parts[-1].extend(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand)
+                    else:
+                        print "CIGAR WARNING: Number of matches > 1", cigarstring
+                else:
+                    print "appending:", op, op.query_from, op.query_to, op.ref_iv
+                    suppl_frag = cls(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand)
+                    read_parts.append(suppl_frag)
+            op_type_list.append(op.type)
         return read_parts
 
 if __name__ == "__main__":

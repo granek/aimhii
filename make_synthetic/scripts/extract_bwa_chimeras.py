@@ -43,6 +43,9 @@ def main():
     parser.add_argument("--fusionreads", metavar="READ_FILE",
                         type=argparse.FileType('w'),
                         help="Output reads containing junctions to %(metavar)s")
+    parser.add_argument("--table", metavar="TABLE_FILE", default=sys.stdout,
+                        type=argparse.FileType('w'),
+                        help="Output detailed table of insertions to %(metavar)s")
     # parser.add_argument("--cluster", action="store_true", help="Cluster primary_fragments of junction reads", default=False)
     parser.add_argument("--insertonly", action="store_true", help="Filter out junctions that don't include the insert", default=False)
     parser.add_argument("--minreads", type=int, metavar="NUM_READS", default=2, 
@@ -101,7 +104,7 @@ def main():
     for metacluster in metacluster_list:
         print metacluster.str_with_secondary
 
-    outwriter = csv.writer(sys.stdout,dialect=csv.excel)
+    outwriter = csv.writer(args.table,dialect=csv.excel)
     outwriter.writerow(metacluster_list[0].__class__.Header)
     for metacluster in metacluster_list:
         # print metacluster.output

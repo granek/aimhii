@@ -68,19 +68,17 @@ def main():
         # count the number of hits at each junction
         junction_count_dict = {}
         for curjunc in junction_list:
-            junction_count_dict[curjunc.junction_tuple] = 1+junction_count_dict.get(curjunc.junction_tuple,0)
-        for key in junction_count_dict:
-            print key
-
-        for key in sorted(junction_count_dict,key=attrgetter('qstart')):
-            (l_chrom, l_junc),(r_chrom, r_junc) = key
+            junction_count_dict.setdefault(curjunc.junction_tuple,[]).append(curjunc)
+            # junction_count_dict[curjunc.junction_tuple] = 1+junction_count_dict.get(curjunc.junction_tuple,0)
+        for key in sorted(junction_count_dict.keys()):
+            l_chrom, l_junc,r_chrom, r_junc = key
             print >>args.junction, "{4}\t{0}:{1}~{2}:{3}".format(l_chrom, l_junc,
                                                                  r_chrom, r_junc,
-                                                                 junction_count_dict[key])
+                                                                 len(junction_count_dict[key]))
     if args.fusionreads:
         # for curjunc in sorted(junction_list,key=lambda x: x.junction_tuple):
         for curjunc in junction_list:
-            print >>args.fusionreads, "{0.readname}\t{0.chrom1}:{0.junc1}~{0.chrom2}:{0.junc2}".format(curjunc)
+            print >>args.fusionreads, "{0.readname}\t{0}".format(curjunc)
     
     print "CLUSTERING"
     cluster_list = cluster_junctions(junction_list)
@@ -301,7 +299,6 @@ class ChimeraJunction:
             raise StandardError, "Problem with strand combinations"
 
 
-            
         # elif self.primary_frag.strand == MINUS:
         #     self.primary_frag.strand = PLUS
         #     if self.secondary_frag.strand == PLUS:
@@ -310,16 +307,18 @@ class ChimeraJunction:
         #     else:
         #         self.secondary_frag.strand = PLUS
 
+        self.l_frag = l_part
+        self.r_frag = r_part
         if self.primary_frag == l_part:
-            self.chrom1 = self.primary_frag
-            self.chrom2 = self.secondary_frag
+            # self.chrom1 = self.primary_frag.chrom
+            # self.chrom2 = self.secondary_frag.chrom
             self.insert_side = RIGHT
         else:
-            self.chrom1 = self.secondary_frag
-            self.chrom2 = self.primary_frag
+            # self.chrom1 = self.secondary_frag.chrom
+            # self.chrom2 = self.primary_frag.chrom
             self.insert_side = LEFT
             
-        self.insert_point = self.chrom1.junc
+        self.insert_point = self.l_frag.junc
 
 
         #         if self.primary_frag.junc > self.primary_frag.distal:
@@ -416,14 +415,14 @@ class ChimeraJunction:
         # junction_dict.setdefault(((l_chrom, l_junc),(r_chrom, r_junc)),set()).add(aread.qname)
 
     def __str__(self):
-        return "{0.chrom1}:{0.chrom1.junc}~{0.chrom2}:{0.chrom2.junc} insert:{0.insert_side}".format(self)
+        return "{0.l_frag.chrom}:{0.l_frag.junc}~{0.r_frag.chrom}:{0.r_frag.junc} insert:{0.insert_side}".format(self)
 
     # def __hash__(self):
     #     # return hash((self.l_chrom, self.l_junc),(self.r_chrom, self.r_junc))
     #     return hash(((self.chrom1, self.junc1),(self.chrom2, self.junc2)))
     @property
     def junction_tuple(self):
-        return (self.chrom1, self.chrom1.junc),(self.chrom2, self.chrom2.junc)
+        return (self.l_frag.chrom, self.l_frag.junc, self.r_frag.chrom, self.r_frag.junc)
 
     @property
     def contains_insert(self):

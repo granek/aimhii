@@ -166,27 +166,6 @@ def find_chimeric_reads(sam_filename):
                 print "{0.qname:20} r{3} {4}\t{1}:{0.pos}-{0.aend}[{0.alen}]\tQ:{0.qstart}-{0.qend}[{0.qlen}]\t{0.cigarstring:10}".format(aread,rname, sa_list,readnum,line_type)
     return junction_list
 
-
-def parse_samfile_htseq(sam_filename,refname):
-    sambase,samext = os.path.splitext(sam_filename)
-    if samext == ".sam":
-        align_seq = iter(HTSeq.SAM_Reader( sam_filename ))
-    elif samext == ".bam":
-        align_seq = iter(HTSeq.BAM_Reader( sam_filename ))
-    else:
-        print >>sys.stderr, "Problem with SAM/BAM File:", sam_filename
-        sys.exit(1)
-
-    record_list = []
-    for aread in align_seq:
-        if aread.iv.chrom == refname:
-            print "READ:", aread
-        else:
-            optional_fields = dict(aread.optional_fields)
-            print aread.mate_start, optional_fields.get("XP","no xp"), optional_fields.get("XF","no xf"), aread.read.name
-    
-    return record_list
-
 def cluster_junctions(junction_list):
     cluster_list = []
     for cur_junction in junction_list:

@@ -320,10 +320,10 @@ class ClusterDoublet(ClusterGroup):
         # print >>sys.stderr, "number of reads"; sys.exit(1)
         return (self.__class__.Type,
                 self.left.iv.chrom,
-                self.left.iv.start, self.left.iv.end,self.left.count,
+                self.left.iv.start+1, self.left.iv.end,self.left.count,
                 self.gap_length, self.insert_length,
-                self.insert_iv.chrom, self.insert_iv.start, self.insert_iv.end,self.insert_iv.strand,
-                self.right.iv.start, self.right.iv.end,self.right.count)
+                self.insert_iv.chrom, self.insert_iv.start+1, self.insert_iv.end,self.insert_iv.strand,
+                self.right.iv.start+1, self.right.iv.end,self.right.count)
 
     @property
     def gap_length(self):

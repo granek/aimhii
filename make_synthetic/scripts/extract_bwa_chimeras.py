@@ -214,40 +214,40 @@ class ChimeraJunction:
         ## primary_frag should always be on plus strand, so invert junctions where primary_frag is minus strand
         ##========================
         if self.primary_frag.strand == PLUS and self.secondary_frag.strand == PLUS :
-            l_part.distal = l_part.start
+            l_part.distal = l_part.start+1
             l_part.junc = l_part.end
-            r_part.junc = r_part.start
+            r_part.junc = r_part.start+1
             r_part.distal = r_part.end
         elif self.primary_frag.strand == MINUS and self.secondary_frag.strand == MINUS :
             self.primary_frag.strand = self.secondary_frag.strand = PLUS
             l_part,r_part = r_part,l_part
-            l_part.distal = l_part.start
+            l_part.distal = l_part.start+1
             l_part.junc = l_part.end
-            r_part.junc = r_part.start
+            r_part.junc = r_part.start+1
             r_part.distal = r_part.end
         elif self.primary_frag.strand == PLUS and self.secondary_frag.strand == MINUS :
             if self.primary_frag == l_part:
-                l_part.distal = l_part.start
+                l_part.distal = l_part.start+1
                 l_part.junc = l_part.end
                 r_part.junc = r_part.end
-                r_part.distal = r_part.start
+                r_part.distal = r_part.start+1
             else: # self.primary_frag == r_part:
                 l_part.distal = l_part.end
-                l_part.junc = l_part.start
-                r_part.junc = r_part.start
+                l_part.junc = l_part.start+1
+                r_part.junc = r_part.start+1
                 r_part.distal = r_part.end
         elif self.primary_frag.strand == MINUS and self.secondary_frag.strand == PLUS :
             self.primary_frag.strand,self.secondary_frag.strand = PLUS,MINUS
             l_part,r_part = r_part,l_part
             if self.primary_frag == l_part:
-                l_part.distal = l_part.start
+                l_part.distal = l_part.start+1
                 l_part.junc = l_part.end
                 r_part.junc = r_part.end
-                r_part.distal = r_part.start
+                r_part.distal = r_part.start+1
             else: # self.primary_frag == r_part:
                 l_part.distal = l_part.end
-                l_part.junc = l_part.start
-                r_part.junc = r_part.start
+                l_part.junc = l_part.start+1
+                r_part.junc = r_part.start+1
                 r_part.distal = r_part.end
         else:
             raise StandardError, "Problem with strand combinations"

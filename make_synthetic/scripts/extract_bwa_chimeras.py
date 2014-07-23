@@ -58,34 +58,47 @@ def main():
     # parser.add_argument("--group", help="group reads and output groups to separate FASTQ files.",action="store_true",default=False)
     args = parser.parse_args()
 
-    if args.insert:
-        insert_rec = SeqIO.read(args.insert,"fasta")
+    junction_list = run_full_analysis(args.SAM_FILE.name, args.minreads, args.maxgap, args.table, args.insert, args.insertonly)
+    #--------------------------------------------------
+    if args.junction:
+        output_junctions(junction_list, args.junction)
+        
+    if args.fusionreads:
+        output_fusionreads(junction_list, args.fusionreads)
+    #--------------------------------------------------
+    
+def output_junctions(junction_list,junction_handle):
+    # count the number of hits at each junction
+    junction_count_dict = {}
+    for curjunc in junction_list:
+        junction_count_dict.setdefault(curjunc.junction_tuple,[]).append(curjunc)
+        # junction_count_dict[curjunc.junction_tuple] = 1+junction_count_dict.get(curjunc.junction_tuple,0)
+    for key in sorted(junction_count_dict.keys()):
+        l_chrom, l_junc,r_chrom, r_junc = key
+        print >>junction_handle, "{4}\t{0}:{1}~{2}:{3}".format(l_chrom, l_junc,
+                                                             r_chrom, r_junc,
+                                                             len(junction_count_dict[key]))
+
+def output_fusionreads(junction_list, fusion_handle):
+    # for curjunc in sorted(junction_list,key=lambda x: x.junction_tuple):
+    for curjunc in junction_list:
+        print >>fusion_handle, "{0.readname}\t{0}".format(curjunc)
+
+def run_full_analysis(mapread_bam, minreads, maxgap, outhandle, insert_seq=None, insertonly=False):
+    if insert_seq:
+        insert_rec = SeqIO.read(insert_seq,"fasta")
         ChimeraJunction.InsertSeqID = insert_rec.id
 
-    junction_list = find_chimeric_reads(args.SAM_FILE.name)
-    if args.insertonly and args.insert:
+    junction_list = find_chimeric_reads(mapread_bam)
+    if insertonly and insert_seq:
         junction_list = [junction for junction in junction_list if junction.contains_insert]
     junction_list.sort()
     # find_chimeric_reads_htseq(args.SAM_FILE.name)
-    if args.junction:
-        # count the number of hits at each junction
-        junction_count_dict = {}
-        for curjunc in junction_list:
-            junction_count_dict.setdefault(curjunc.junction_tuple,[]).append(curjunc)
-            # junction_count_dict[curjunc.junction_tuple] = 1+junction_count_dict.get(curjunc.junction_tuple,0)
-        for key in sorted(junction_count_dict.keys()):
-            l_chrom, l_junc,r_chrom, r_junc = key
-            print >>args.junction, "{4}\t{0}:{1}~{2}:{3}".format(l_chrom, l_junc,
-                                                                 r_chrom, r_junc,
-                                                                 len(junction_count_dict[key]))
-    if args.fusionreads:
-        # for curjunc in sorted(junction_list,key=lambda x: x.junction_tuple):
-        for curjunc in junction_list:
-            print >>args.fusionreads, "{0.readname}\t{0}".format(curjunc)
+
     
     print "CLUSTERING"
     cluster_list = cluster_junctions(junction_list)
-    cluster_list = filter_clusters(cluster_list, args.minreads)
+    cluster_list = filter_clusters(cluster_list, minreads)
     cluster_list.sort()
 
     for cluster in cluster_list:
@@ -99,16 +112,18 @@ def main():
 
 
     print "NEEED TO MAKE VALUES base 1!!!!", "#"*50
-    metacluster_list = find_cluster_pairs(cluster_list,args.maxgap)
+    metacluster_list = find_cluster_pairs(cluster_list,maxgap)
     print "NEEED TO MAKE VALUES base 1!!!!", "#"*50
     for metacluster in metacluster_list:
         print metacluster.str_with_secondary
 
-    outwriter = csv.writer(args.table,dialect=csv.excel)
+    outwriter = csv.writer(outhandle,dialect=csv.excel)
     outwriter.writerow(metacluster_list[0].__class__.Header)
     for metacluster in metacluster_list:
         # print metacluster.output
         outwriter.writerow(metacluster.output)
+
+    return junction_list
 
 def find_chimeric_reads(sam_filename):
     junction_list = []

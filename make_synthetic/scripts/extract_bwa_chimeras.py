@@ -58,7 +58,7 @@ def main():
     # parser.add_argument("--group", help="group reads and output groups to separate FASTQ files.",action="store_true",default=False)
     args = parser.parse_args()
 
-    junction_list = run_full_analysis(args.SAM_FILE.name, args.minreads, args.maxgap, args.table, args.insert, args.insertonly)
+    junction_list = run_analysis(args.SAM_FILE.name, args.minreads, args.maxgap, args.table, args.insert, args.insertonly)
     #--------------------------------------------------
     if args.junction:
         output_junctions(junction_list, args.junction)
@@ -84,7 +84,7 @@ def output_fusionreads(junction_list, fusion_handle):
     for curjunc in junction_list:
         print >>fusion_handle, "{0.readname}\t{0}".format(curjunc)
 
-def run_full_analysis(mapread_bam, minreads, maxgap, outhandle, insert_seq=None, insertonly=False):
+def run_analysis(mapread_bam, minreads, maxgap, outhandle, insert_seq=None, insertonly=False):
     if insert_seq:
         insert_rec = SeqIO.read(insert_seq,"fasta")
         ChimeraJunction.InsertSeqID = insert_rec.id

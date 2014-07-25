@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import argparse
 import os
 import re
@@ -7,15 +9,28 @@ import tempfile, shutil, atexit
 import time
 import sys
 import signal
+import fileinput
+import extract_bwa_chimeras
 
 def main():
     parser = argparse.ArgumentParser(description="Extract all reads in SAM_FILE that map to REF_NAME, or have pair that maps to it (including fusion matches)")
     parser.add_argument("REF_GENOME", help="FASTA file containing reference genome that reads will be mapped to.")
+    parser.add_argument("INSERT_SEQ", help="FASTA file containing the sequence of the insertion DNA fragment.")
     parser.add_argument("ADAPTER_FILE", help="FASTA file containing sequences of adapters to be removed from reads.")
     parser.add_argument("FASTQ_FILE", nargs="+", help="One file for single-end, two for paired end.  Files may be gzipped.")
     parser.add_argument("-t", "--tmpdir", help="Directory for outputing intermediate files (default: %(default)s).")
     parser.add_argument("--threads", type=int, default=1, help="Number of parallel processed to run (default: %(default)s).")
     parser.add_argument("--minseed", type=int, default=10, help="Minimum seed length for bwa meme (default: %(default)s).")
+
+    parser.add_argument("--outfile", metavar="TABLE_FILE", default=sys.stdout,
+                        type=argparse.FileType('w'),
+                        help="Output detailed table of insertions to %(metavar)s")
+    parser.add_argument("--minreads", type=int, metavar="NUM_READS", default=2, 
+                        help="Clusters consisting of less than %(metavar)s reads are ignored (default: %(default)s)")
+    parser.add_argument("--maxgap", type=int, metavar="GAP_LENGTH", default=100, 
+                        help="Clusters separated by no more than %(metavar)s) bases are considered to be cluster doublets (default: %(default)s)")
+
+    
     # parser.add_argument("--insert", type=file, help="The sequence of the inserted DNA fragment.  Used to determine how to organize junctions.")
     # parser.add_argument("REF_NAME", help="Extract all reads w")
     args = parser.parse_args()
@@ -32,7 +47,10 @@ def main():
         tmpdir = tempfile.mkdtemp(suffix="aimhii")
         atexit.register(shutil.rmtree, tmpdir)
 
-    ref_index = run_bwaindex(args.REF_GENOME)
+    concatentated_genome = os.path.join(tmpdir,"ref_and_insert.fa")
+    concatenate_files(concatentated_genome, [args.REF_GENOME, args.INSERT_SEQ])
+    
+    ref_index = run_bwaindex(concatentated_genome)
     trimmed_fastqs = run_fastqmcf(args.ADAPTER_FILE, args.FASTQ_FILE,tmpdir)
 
     if len(args.FASTQ_FILE)==2:
@@ -45,6 +63,8 @@ def main():
         final_bamname = run_bwamem(ref_index,trimmed_fastqs, os.path.join(tmpdir,"single"),args.threads,args.minseed)
 
     run_samtools_index(final_bamname)
+
+    extract_bwa_chimeras.run_analysis(final_bamname, args.minreads, args.maxgap, args.outfile, args.INSERT_SEQ, insertonly=True)
 
 
 def run_fastqmcf(adapter_file, fastq_file_list, outdir):
@@ -136,7 +156,13 @@ def run_samtools_index(inbam):
     subprocess.check_output(index_cmd)
     return inbam
 
-
+##--------------------------------
+## Concatenate Files
+##--------------------------------
+def concatenate_files(outfilename,filelist):
+    with open(outfilename, 'w') as fout:
+        for line in fileinput.input(filelist):
+            fout.write(line)
 
 # make -f bwamem_chimeras.mk all SYNTHETIC="TRUE"  --dry-run
 

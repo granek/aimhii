@@ -215,14 +215,23 @@ class ChimeraJunction:
             else:
                 self.primary_frag = l_part # insert_part
                 self.secondary_frag = r_part # ref_part
-        elif l_part.rname < r_part.rname or (l_part.rname == r_part.rname and l_part.start < r_part.start):
+        elif l_part.rname < r_part.rname or (l_part.rname == r_part.rname and
+                                             (l_part.start < r_part.start or
+                                              (l_part.start == r_part.start and
+                                               l_part.end < r_part.end))):
             self.primary_frag = l_part
             self.secondary_frag = r_part
-        elif l_part.rname > r_part.rname or (l_part.rname == r_part.rname and l_part.start > r_part.start):
+        elif l_part.rname > r_part.rname or (l_part.rname == r_part.rname and
+                                             (l_part.start > r_part.start or
+                                             (l_part.start == r_part.start and
+                                               l_part.end > r_part.end))):
             self.primary_frag = r_part
             self.secondary_frag = l_part
         else:
-            raise StandardError
+            print "STRANGE READ!!! l_part.rname == r_part.rname and l_part.start == r_part.start??"
+            print "qname:{0}\tl_part:{1}\tr_part:{2}".format(qname,l_part,r_part)
+            self.primary_frag = l_part
+            self.secondary_frag = r_part
 
         ##========================
         ## Normalize Junctions:

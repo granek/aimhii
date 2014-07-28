@@ -47,7 +47,8 @@ def main():
                         type=argparse.FileType('w'),
                         help="Output detailed table of insertions to %(metavar)s")
     # parser.add_argument("--cluster", action="store_true", help="Cluster primary_fragments of junction reads", default=False)
-    parser.add_argument("--insertonly", action="store_true", help="Filter out junctions that don't include the insert", default=False)
+    # parser.add_argument("--insertonly", action="store_true", help="Filter out junctions that don't include the insert", default=False)
+    parser.add_argument("--alljunctions", action="store_true", help="Process all junctions (default: if --insert is provide, exclude reads that don't contain the insert", default=False)
     parser.add_argument("--minreads", type=int, metavar="NUM_READS", default=2, 
                         help="Clusters consisting of less than %(metavar)s reads are ignored (default: %(default)s)")
     parser.add_argument("--maxgap", type=int, metavar="GAP_LENGTH", default=100, 
@@ -58,7 +59,7 @@ def main():
     # parser.add_argument("--group", help="group reads and output groups to separate FASTQ files.",action="store_true",default=False)
     args = parser.parse_args()
 
-    junction_list = run_analysis(args.SAM_FILE.name, args.minreads, args.maxgap, args.table, args.insert, args.insertonly)
+    junction_list = run_analysis(args.SAM_FILE.name, args.minreads, args.maxgap, args.table, args.insert, not(args.alljunctions))
     #--------------------------------------------------
     if args.junction:
         output_junctions(junction_list, args.junction)
@@ -228,7 +229,7 @@ class ChimeraJunction:
             self.primary_frag = r_part
             self.secondary_frag = l_part
         else:
-            print "STRANGE READ!!! l_part.rname == r_part.rname and l_part.start == r_part.start??"
+            print "STRANGE READ!!! NEED TO CHECK!!! l_part.rname == r_part.rname and l_part.start == r_part.start??"
             print "qname:{0}\tl_part:{1}\tr_part:{2}".format(qname,l_part,r_part)
             self.primary_frag = l_part
             self.secondary_frag = r_part

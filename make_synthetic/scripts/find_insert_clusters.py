@@ -119,17 +119,26 @@ def find_cluster_pairs(cluster_list,max_gap_size):
             break
         else:
             next_cluster = cluster_list[i+1]
+
+        print >>sys.stderr, "cur_cluster:{0}\tnext_cluster:{1}".format(cur_cluster, next_cluster)
         if (cur_cluster.iv.chrom != next_cluster.iv.chrom):
+            print >>sys.stderr, "Last cluster on chrom:", cur_cluster
             metacluster_list.append(ClusterSingleton(cur_cluster))
             print >>sys.stderr, "Found a cluster singleton:", metacluster_list[-1]
             i += 1
         elif cur_cluster.insertion_side == RIGHT and next_cluster.insertion_side == LEFT:
+            print >>sys.stderr, "Clusters face each other:", cur_cluster, next_cluster
+            # for clust in (cur_cluster, next_cluster):
+            #     print >>sys.stderr, clust
+            #     for read in clust.read_list:
+            #         print read
             metacluster = ClusterDoublet(cur_cluster,next_cluster)
             if metacluster.gap_length <= max_gap_size:
                 metacluster_list.append(metacluster)
                 print >>sys.stderr, "Found a cluster doublet:", metacluster.gap_length, metacluster
                 i += 2
             else:
+                print >>sys.stderr, "Gap is too big:", cur_cluster, next_cluster, metacluster.gap_length
                 metacluster_list.append(ClusterSingleton(cur_cluster))
                 print >>sys.stderr, "Found a cluster singleton:", metacluster_list[-1]
                 i += 1
@@ -300,6 +309,7 @@ class ClusterDoublet(ClusterGroup):
         self.left = left_cluster
         self.right = right_cluster
         self.insert_iv = left_cluster.secondary_iv.copy()
+        print >>sys.stderr, "left_cluster:{0.secondary_iv}\tright_cluster:{1.secondary_iv}".format(left_cluster,right_cluster)
         self.insert_iv.extend_to_include(right_cluster.secondary_iv)
         if left_cluster.secondary_iv.start > right_cluster.secondary_iv.start:
             self.insert_iv.strand = "-"

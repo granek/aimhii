@@ -9,6 +9,9 @@ from find_insert_clusters import ReadCluster, filter_clusters, find_cluster_pair
 import csv
 from operator import attrgetter
 
+from plot_metaclusters import plot_clusters, READ_PITCH, READ_HEIGHT
+import matplotlib
+
 # cigar_re = re.compile("(d+)([mM])(d+)[F](d+)[mM]")
 OPPOSITE_STRAND = {"+":"-", "-":"+"}
 OPPOSITE_SIDE = {RIGHT:LEFT, LEFT:RIGHT}
@@ -53,19 +56,26 @@ def main():
                         help="Clusters consisting of less than %(metavar)s reads are ignored (default: %(default)s)")
     parser.add_argument("--maxgap", type=int, metavar="GAP_LENGTH", default=100, 
                         help="Clusters separated by no more than %(metavar)s) bases are considered to be cluster doublets (default: %(default)s)")
+    parser.add_argument("--plot", metavar="PLOT_FILE",
+                        help="Generate plots of metaclusters")
 
     # parser.add_argument("--outdir", metavar="OUTDIR", help="Save output file to %(metavar)s (default is same directory as SAM_FILE)")
     # parser.add_argument("--verbose", help="increase output verbosity",action="store_true",default=False)
     # parser.add_argument("--group", help="group reads and output groups to separate FASTQ files.",action="store_true",default=False)
     args = parser.parse_args()
 
-    junction_list = run_analysis(args.SAM_FILE.name, args.minreads, args.maxgap, args.table, args.insert, not(args.alljunctions))
+    junction_list, metacluster_list = run_analysis(args.SAM_FILE.name, args.minreads,
+                                                   args.maxgap, args.table,
+                                                   args.insert, not(args.alljunctions))
     #--------------------------------------------------
     if args.junction:
         output_junctions(junction_list, args.junction)
         
     if args.fusionreads:
         output_fusionreads(junction_list, args.fusionreads)
+
+    if args.plot:
+        plot_clusters(metacluster_list,args.plot)
     #--------------------------------------------------
     
 def output_junctions(junction_list,junction_handle):
@@ -124,7 +134,7 @@ def run_analysis(mapread_bam, minreads, maxgap, outhandle, insert_seq=None, inse
         # print metacluster.output
         outwriter.writerow(metacluster.output)
 
-    return junction_list
+    return junction_list, metacluster_list
 
 def find_chimeric_reads(sam_filename):
     junction_list = []
@@ -337,7 +347,13 @@ class ChimeraJunction:
             return False
         else:
             return self.readname < other.readname
-
+    def draw(self,i):
+        xy = (self.primary_frag.start,i*READ_PITCH)
+        width = self.primary_frag.length
+        height = READ_HEIGHT
+        print "I am pretending to draw myself xy:{0}, width:{1}, height:{2}".format(xy,width,height)
+        rect = matplotlib.patches.Rectangle( xy, width=width, height=height)
+        return rect
 
 class ReadFragment(HTSeq.GenomicInterval):
     def __init__(self,qstart,qend,pos,aend,rname,strand):

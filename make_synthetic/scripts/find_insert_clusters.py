@@ -291,7 +291,14 @@ class ReadCluster:
         print self.secondary_iv, self.secondary_iv.start, self.secondary_iv.end, self.secondary_iv.start_d, self.secondary_iv.end_d
     # def gap(self,other):
     #     return (other.iv.start - self.iv.end)-1
+    def __iter__(self):
+        return tuple(self.read_list)
 
+    def next(self):
+        return self.read_list.next()
+
+    def draw(self):
+        return [read.draw(i) for i,read in enumerate(self.read_list)]
 
 class ClusterGroup:
     Header = ("# type",
@@ -308,6 +315,9 @@ class ClusterDoublet(ClusterGroup):
     def __init__(self,left_cluster, right_cluster):
         self.left = left_cluster
         self.right = right_cluster
+        self.iv = left_cluster.iv.copy()
+        self.iv.extend_to_include(right_cluster.iv)
+
         self.insert_iv = left_cluster.secondary_iv.copy()
         print >>sys.stderr, "left_cluster:{0.secondary_iv}\tright_cluster:{1.secondary_iv}".format(left_cluster,right_cluster)
         self.insert_iv.extend_to_include(right_cluster.secondary_iv)
@@ -368,12 +378,10 @@ class ClusterDoublet(ClusterGroup):
         
         return (left_feature, insert_feature, right_feature)
         # attr:             The last (9th) column of a GFF file contains attributes, i.e. a list of name/value pairs. These are transformed into a dict, such that, e.g., gf.attr['gene_id'] gives the value of the attribute gene_id in the feature described by GenomicFeature object gf. The parser for the attribute field is reasonably flexible to deal with format variations (it was never clearly established whetehr name and value should be sperarated by a colon or an equal sign, and whether quotes need to be used) and also does a URL style decoding, as is often required.
-
-
-
-
-        
-
+    def draw(self):
+        right_rect_list = self.right.draw()
+        left_rect_list = self.left.draw()
+        return right_rect_list+left_rect_list, max(len(right_rect_list),len(left_rect_list))
         
 class ClusterSingleton(ClusterGroup):
     Type = "singleton"
@@ -428,6 +436,9 @@ class ClusterSingleton(ClusterGroup):
                     None, None,
                     None,None,None,None,
                     self.iv.start, self.iv.end,self.singleton.count)
+    def draw(self):
+        rect_list = self.singleton.draw()
+        return rect_list, len(rect_list)
 
 if __name__ == "__main__":
    main()

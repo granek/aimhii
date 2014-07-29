@@ -6,8 +6,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 import os
 
 READ_HEIGHT = 1
-READ_HEIGHT_INCHES = 0.08
-READ_PITCH = READ_HEIGHT * 1.2
+READ_HEIGHT_INCHES = 0.07
+READ_PITCH = READ_HEIGHT * 1.3
 MARGIN=1
 def plot_clusters(metacluster_list,plotfilename):
 

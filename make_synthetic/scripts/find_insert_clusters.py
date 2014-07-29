@@ -298,7 +298,11 @@ class ReadCluster:
         return self.read_list.next()
 
     def draw(self):
-        return [read.draw(i) for i,read in enumerate(self.read_list)]
+        if self.insertion_side == LEFT:
+            sorted_reads = sorted(self.read_list,reverse=True,key=lambda read: (read.iv.end,read.iv.start,))
+        else:
+            sorted_reads = sorted(self.read_list,key=lambda read: (read.iv.start,read.iv.end))
+        return [read.draw(i) for i,read in enumerate(sorted_reads)]
 
 class ClusterGroup:
     Header = ("# type",

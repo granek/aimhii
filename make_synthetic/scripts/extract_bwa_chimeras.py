@@ -352,7 +352,7 @@ class ChimeraJunction:
         width = self.primary_frag.length
         height = READ_HEIGHT
         print "I am pretending to draw myself xy:{0}, width:{1}, height:{2}".format(xy,width,height)
-        rect = matplotlib.patches.Rectangle( xy, width=width, height=height)
+        rect = matplotlib.patches.Rectangle( xy, width=width, height=height,facecolor='black',edgecolor="none")
         return rect
 
 class ReadFragment(HTSeq.GenomicInterval):

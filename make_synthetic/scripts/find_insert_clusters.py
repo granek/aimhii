@@ -310,7 +310,7 @@ class ClusterGroup:
               "left_start_b1", "left_junction_b1", "left_numreads",
               "gap_length", "insert_length",
               "insert_chrom", "insert_start", "insert_end", "insert_strand",
-              "right_start_b1", "right_junction_b1","right_numreads")
+              "right_junction_b1","right_end_b1", "right_numreads")
     def __init__(self):
         pass
 

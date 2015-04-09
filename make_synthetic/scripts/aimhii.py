@@ -27,7 +27,7 @@ def main():
                         help="Output detailed table of insertions to %(metavar)s")
     parser.add_argument("--minreads", type=int, metavar="NUM_READS", default=2, 
                         help="Clusters consisting of less than %(metavar)s reads are ignored (default: %(default)s)")
-    parser.add_argument("--maxgap", type=int, metavar="GAP_LENGTH", default=100, 
+    parser.add_argument("--maxgap", type=int, metavar="GAP_LENGTH", default=5000, 
                         help="Clusters separated by no more than %(metavar)s) bases are considered to be cluster doublets (default: %(default)s)")
 
     

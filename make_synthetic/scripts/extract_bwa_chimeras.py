@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import HTSeq
 import argparse
 import sys
@@ -54,7 +56,7 @@ def main():
     parser.add_argument("--alljunctions", action="store_true", help="Process all junctions (default: if --insert is provide, exclude reads that don't contain the insert", default=False)
     parser.add_argument("--minreads", type=int, metavar="NUM_READS", default=2, 
                         help="Clusters consisting of less than %(metavar)s reads are ignored (default: %(default)s)")
-    parser.add_argument("--maxgap", type=int, metavar="GAP_LENGTH", default=100, 
+    parser.add_argument("--maxgap", type=int, metavar="GAP_LENGTH", default=5000, 
                         help="Clusters separated by no more than %(metavar)s) bases are considered to be cluster doublets (default: %(default)s)")
     parser.add_argument("--plot", metavar="PLOT_FILE",
                         help="Generate plots of metaclusters")
@@ -352,7 +354,18 @@ class ChimeraJunction:
         width = self.primary_frag.length
         height = READ_HEIGHT
         print "I am pretending to draw myself xy:{0}, width:{1}, height:{2}".format(xy,width,height)
-        rect = matplotlib.patches.Rectangle( xy, width=width, height=height,facecolor='black',edgecolor="none")
+        if self.insert_side == RIGHT:
+            rect_color = "green"
+        else:
+            rect_color = "purple"        
+        rect = matplotlib.patches.Rectangle( xy, width=width, height=height,facecolor=rect_color,edgecolor="none",alpha=0.6)
+        # scale_factor = 0.4
+        # if abs(dx) < scaled_headlen:
+        #     headlen = 0
+        # else:
+        #     headlen = scaled_headlen
+        # exon_arrow = ax.arrow(x1,y,dx,0, shape='full', width=exon_dy, length_includes_head=True, head_width=scale_factor,head_length=headlen, transform=trans,fc="black",alpha=0.9)
+
         return rect
 
 class ReadFragment(HTSeq.GenomicInterval):

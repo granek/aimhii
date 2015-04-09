@@ -1,0 +1,21 @@
+#pPZP-NATcc	annotation	remark	1	8484	.	.	.	date=22-NOV-2013; data_file_division=
+pPZP-NATcc	feature	PCR_primer	334	349	.	+	.	name "M13F"; current=0
+pPZP-NATcc	feature	PCR_primer	2132	2149	.	-	.	name "M13R"; current=0
+#pPZP-NATcc	feature	source	439	2111	.	+	.	name "pCH233_backbone"; dnas_title=pPZP-NATcc
+pPZP-NATcc	feature	promoter	439	1273	.	+	.	name "pACT1__28actin_promoter_from_H99_29"
+#pPZP-NATcc	feature	gene	1274	1849	.	+	.	name "NAT"
+pPZP-NATcc	feature	exon	1274	1849	.	+	.	name "NAT"
+pPZP-NATcc	feature	terminator	1850	2111	.	+	.	name "TRP1__28terminator_from_H99_29"
+pPZP-NATcc	feature	misc_feature	114	138	.	+	.	name "Right_border"
+pPZP-NATcc	feature	misc_feature	2423	2447	.	+	.	name "Left_border"
+pPZP-NATcc	feature	PCR_primer	1284	1303	.	+	.	name "aa625"; current=0
+pPZP-NATcc	feature	PCR_primer	1808	1827	.	-	.	name "aa626"; current=0
+pPZP-NATcc	feature	PCR_primer	202	222	.	-	.	name "aa580__28ai076_29"; current=0
+pPZP-NATcc	feature	PCR_primer	2328	2347	.	+	.	name "aa581__28ai077_29"; current=0
+pPZP-NATcc	feature	PCR_primer	1622	1641	.	-	.	name "NAT_Right_Side"; current=0
+pPZP-NATcc	feature	PCR_primer	1373	1392	.	+	.	name "NAT_Left_Side"; current=0
+###
+Chromosome_2.1	feature	promoter	1242233	1243071	.	+	.	name "actin_promoter_H99";
+Chromosome_2.9	feature	terminator	1023919	1024169	.	+	.	name "TRP1_terminator_??JEC21??";
+##gff-version 3
+##sequence-region pPZP-NATcc 1 8484

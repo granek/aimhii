@@ -4,9 +4,7 @@ import argparse
 import os
 import re
 import subprocess
-import contextlib
 import tempfile, shutil, atexit
-import time
 import sys
 import signal
 import fileinput

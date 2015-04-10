@@ -1,4 +1,4 @@
-# /ssh:gems:/home/josh/collabs/AlspaughLab/scripts/run_aimhii.mk
+# /ssh:gems:/home/josh/collabs/AlspaughLab/aimhii/scripts/run_aimhii.mk
 # make run_aimhii NUMTHREADS=12
 
 ##------------------------------------------------------------
@@ -13,7 +13,7 @@ NUM_SUBSET ?= 400000
 ## GLOBAL DIRECTORIES
 ##------------------------------------------------------------
 BASE_DIR := $(COLLAB)/AlspaughLab
-AIMHII_DIR := $(BASE_DIR)/make_synthetic/scripts
+AIMHII_DIR := $(BASE_DIR)/aimhii/scripts
 ORIGINAL_FASTQ_DIR := /nfs/gems_sata/alspaugh/raw_fastqs
 FASTQ_DIR := raw_fastqs
 ##------------------------------------------------------------

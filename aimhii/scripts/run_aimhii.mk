@@ -14,6 +14,7 @@ NUM_SUBSET ?= 400000
 ##------------------------------------------------------------
 BASE_DIR := $(COLLAB)/AlspaughLab
 AIMHII_DIR := $(BASE_DIR)/aimhii/scripts
+INFO_DIR := $(BASE_DIR)/aimhii/info
 ORIGINAL_FASTQ_DIR := /nfs/gems_sata/alspaugh/raw_fastqs
 FASTQ_DIR := raw_fastqs
 ##------------------------------------------------------------
@@ -29,7 +30,7 @@ BWA_DIR := bwa
 ## FILES
 ##------------------------------------------------------------
 AIMHII_OUTPUT := $(RESULTS_DIR)/full_aimhii_results.csv
-ADAPTER_FASTA :=$(BASE_DIR)/info/illumina_adapter1.fasta
+ADAPTER_FASTA :=$(INFO_DIR)/illumina_adapter1.fasta
 READ1_FASTQ := $(FASTQ_DIR)/SE-WHM1_and_Undetermined_R1_001.fastq.gz
 READ2_FASTQ := $(FASTQ_DIR)/SE-WHM1_and_Undetermined_R2_001.fastq.gz
 FULL_OUTPUT := $(RESULTS_DIR)/$(notdir $(READ1_FASTQ:_R1_001.fastq.gz=_results.csv))
@@ -42,7 +43,7 @@ SUBSET_OUTPUT := $(RESULTS_DIR)/$(notdir $(READ1_FASTQ_SUBSET:_R1_001.fastq.gz=_
 
 ## REFERENCE GENOME
 ##-----------------
-PZPNAT_SEQ=$(BASE_DIR)/info/pPZP-NATcc.fasta
+PZPNAT_SEQ=$(INFO_DIR)/pPZP-NATcc.fasta
 H99_SEQNAME := GCF_000149245.1_CNA3_genomic.fna.gz
 H99_GENOME := $(SEQ_DIR)/$(basename $(H99_SEQNAME))
 H99_SEQ=$(TEMP_DIR)/$(H99_SEQNAME)

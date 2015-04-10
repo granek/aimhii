@@ -1,15 +1,13 @@
 # /ssh:gems:/home/josh/collabs/AlspaughLab/scripts/run_aimhii.mk
 # make run_aimhii NUMTHREADS=12
 
-
-
 ##------------------------------------------------------------
 ## MISC
 ##------------------------------------------------------------
 NUMTHREADS ?= 12
 dir_guard=@mkdir -p $(@D)
 RANDOM_SEED := 1
-NUM_SUBSET := 400000
+NUM_SUBSET ?= 400000
 
 ##------------------------------------------------------------
 ## GLOBAL DIRECTORIES
@@ -62,8 +60,7 @@ H99_SEQ_URL := "ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF_000149245.1_CNA3/$(H9
 ##------------------------------------------------------------
 ## BINARIES
 ##------------------------------------------------------------
-AIMHII := $(AIMHII_DIR)/aimhii.py 
-
+AIMHII := $(AIMHII_DIR)/aimhii.py
 
 ##------------------------------------------------------------
 ## PHONY RULES
@@ -76,9 +73,6 @@ test : $(SUBSET_OUTPUT)
 
 subset : $(READ1_FASTQ_SUBSET) $(READ2_FASTQ_SUBSET) 
 
-check :
-	echo $(ORIGINAL_FASTQ_DIR)
-
 extract :
 	$(AIMHII_DIR)/extract_bwa_chimeras.py $(BWA_DIR)/merged.bam --insert $(PZPNAT_SEQ) --table $(RESULTS_DIR)/extract_results.csv 
 
@@ -86,16 +80,6 @@ extract :
 #===============================================================================
 # Download and merge reference genomes 
 #===============================================================================
-# $(H99_AND_PZPNAT_SEQ) : $(H99_SEQ) $(PZPNAT_SEQ)
-# 	$(dir_guard)
-# 	zcat $(word 1,$^) | cat $(word 2,$^) - > $(TEMP_DIR)/$(@F)
-# 	mv $(TEMP_DIR)/$(@F) $@
-
-# $(H99_SEQ) :
-# 	$(dir_guard)
-# 	curl --fail -o $@.tmp $(H99_SEQ_URL) 
-# 	mv $@.tmp $@
-
 $(H99_GENOME) :
 	$(dir_guard)
 	curl --fail -o $@.tmp.gz $(H99_SEQ_URL)
@@ -111,8 +95,6 @@ $(BWA_DIR) :
 #===============================================================================
 # Run It!
 #===============================================================================
-# $(AIMHII_OUTPUT) : $(H99_GENOME) $(BWA_DIR)
-# $(AIMHII_OUTPUT) : $(H99_GENOME) $(BWA_DIR)
 $(RESULTS_DIR)/%_results.csv : $(BWA_DIR) $(H99_GENOME) $(FASTQ_DIR)/%_R1_001.fastq.gz $(FASTQ_DIR)/%_R2_001.fastq.gz 
 	$(dir_guard)
 	$(AIMHII) --threads $(NUMTHREADS) --outfile $@.tmp -t $(word 1,$^) $(word 2,$^) $(PZPNAT_SEQ) $(ADAPTER_FASTA) $(word 3,$^) $(word 4,$^)
@@ -128,7 +110,6 @@ $(FASTQ_DIR)/sample_R%_001.fastq.gz : $(FASTQ_DIR)/SE-WHM1_and_Undetermined_R%_0
 	# mv $(basename $@).tmp.gz $@
 	seqtk sample -s $(RANDOM_SEED) $< $(NUM_SUBSET) | gzip > $@.tmp.gz
 	mv $@.tmp.gz $@
-
 
 $(FASTQ_DIR)/SE-WHM1_and_Undetermined_R%_001.fastq.gz : $(ORIGINAL_FASTQ_DIR)/SE-WHM1_and_Undetermined_R%_001.fastq.gz
 	$(dir_guard)

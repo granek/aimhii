@@ -6,10 +6,10 @@
 ##------------------------------------------------------------
 ## MISC
 ##------------------------------------------------------------
-NUMTHREADS ?= 6
+NUMTHREADS ?= 12
 dir_guard=@mkdir -p $(@D)
 RANDOM_SEED := 1
-NUM_SUBSET := 30000
+NUM_SUBSET := 400000
 
 ##------------------------------------------------------------
 ## GLOBAL DIRECTORIES
@@ -77,7 +77,7 @@ test : $(SUBSET_OUTPUT)
 subset : $(READ1_FASTQ_SUBSET) $(READ2_FASTQ_SUBSET) 
 
 check :
-	echo $(H99_GENOME)
+	echo $(ORIGINAL_FASTQ_DIR)
 
 extract :
 	$(AIMHII_DIR)/extract_bwa_chimeras.py $(BWA_DIR)/merged.bam --insert $(PZPNAT_SEQ) --table $(RESULTS_DIR)/extract_results.csv 
@@ -134,10 +134,12 @@ $(FASTQ_DIR)/SE-WHM1_and_Undetermined_R%_001.fastq.gz : $(ORIGINAL_FASTQ_DIR)/SE
 	$(dir_guard)
 	ln -s $< $@
 
-
 #===============================================================================
 # CLEAN UP
 #===============================================================================
+clean : 
+	rm -rf $(FASTQ_DIR) $(RESULTS_DIR) $(BWA_DIR)
+
 pristine :
-	rm -rf $(TEMP_DIR) $(SEQ_DIR) $(RESULTS_DIR) $(BWA_DIR)
+	rm -rf $(FASTQ_DIR) $(SEQ_DIR) $(RESULTS_DIR) $(BWA_DIR)
 

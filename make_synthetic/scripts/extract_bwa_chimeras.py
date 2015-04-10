@@ -7,7 +7,7 @@ import pysam
 import re
 import os
 from Bio import SeqIO
-from find_insert_clusters import ReadCluster, filter_clusters, find_cluster_pairs, RIGHT, LEFT
+from find_insert_clusters import ReadCluster, filter_clusters, find_cluster_pairs, RIGHT, LEFT, ClusterGroup
 import csv
 from operator import attrgetter
 
@@ -131,7 +131,8 @@ def run_analysis(mapread_bam, minreads, maxgap, outhandle, insert_seq=None, inse
         print metacluster.str_with_secondary
 
     outwriter = csv.writer(outhandle,dialect=csv.excel)
-    outwriter.writerow(metacluster_list[0].__class__.Header)
+    # print >>sys.stderr, "metacluster_list", metacluster_list
+    outwriter.writerow(ClusterGroup.Header)
     for metacluster in metacluster_list:
         # print metacluster.output
         outwriter.writerow(metacluster.output)

@@ -9,8 +9,9 @@
 
 ## Software
 
-The versions given below have been tested with this repository, and are known to work, but earlier versions may work perfectly well
--   [BWA](http://bio-bwa.sourceforge.net/) (version 2.2.3)
+The versions given below have been tested with this repository, and are known to work, but earlier versions may work perfectly well:
+
+-   [BWA](http://bio-bwa.sourceforge.net/) (version 0.7.5a-r405)
 -   [NCBI SRA Toolkit](http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?view=software) (version 2.3.5)
 
 -   Likely to be installed on most Linux servers

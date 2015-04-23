@@ -140,7 +140,7 @@ def run_bwamem(genome_index, fastq_list,outfile_root,numthreads=1,minseed=10):
 def run_samtools_merge(mergebam, inbam1, inbam2):
     # samtools merge bwa/syn.merge.bam bwa/syn.pair.bam bwa/syn.join.bam
 
-    merge_cmd = ["samtools", "merge", mergebam, inbam1, inbam2]
+    merge_cmd = ["samtools", "merge", "-f", mergebam, inbam1, inbam2]
     print >>sys.stderr, "\n\MERGING BAMS"
     print merge_cmd
     subprocess.check_output(merge_cmd)

@@ -7,7 +7,8 @@
 NUMTHREADS ?= 12
 dir_guard=@mkdir -p $(@D)
 RANDOM_SEED := 1
-NUM_SUBSET ?= 400000
+NUM_SUBSET ?= 200000
+SRA_ACCESSION := SRR1964709
 
 ##------------------------------------------------------------
 ## GLOBAL DIRECTORIES
@@ -31,14 +32,14 @@ BWA_DIR := bwa
 ##------------------------------------------------------------
 AIMHII_OUTPUT := $(RESULTS_DIR)/full_aimhii_results.csv
 ADAPTER_FASTA :=$(INFO_DIR)/illumina_adapter1.fasta
-READ1_FASTQ := $(FASTQ_DIR)/SE-WHM1_and_Undetermined_R1_001.fastq.gz
-READ2_FASTQ := $(FASTQ_DIR)/SE-WHM1_and_Undetermined_R2_001.fastq.gz
-FULL_OUTPUT := $(RESULTS_DIR)/$(notdir $(READ1_FASTQ:_R1_001.fastq.gz=_results.csv))
 
+READ1_FASTQ_SUBSET := $(FASTQ_DIR)/subset_$(SRA_ACCESSION)_R1.fastq.gz
+READ2_FASTQ_SUBSET := $(FASTQ_DIR)/subset_$(SRA_ACCESSION)_R2.fastq.gz
+SUBSET_OUTPUT := $(RESULTS_DIR)/$(notdir $(READ1_FASTQ_SUBSET:_R1.fastq.gz=_results.csv))
 
-READ1_FASTQ_SUBSET := $(FASTQ_DIR)/sample_R1_001.fastq.gz
-READ2_FASTQ_SUBSET := $(FASTQ_DIR)/sample_R2_001.fastq.gz
-SUBSET_OUTPUT := $(RESULTS_DIR)/$(notdir $(READ1_FASTQ_SUBSET:_R1_001.fastq.gz=_results.csv))
+READ1_FASTQ := $(FASTQ_DIR)/full_$(SRA_ACCESSION)_R1.fastq.gz
+READ2_FASTQ := $(FASTQ_DIR)/full_$(SRA_ACCESSION)_R2.fastq.gz
+FULL_OUTPUT := $(RESULTS_DIR)/$(notdir $(READ1_FASTQ:_R1.fastq.gz=_results.csv))
 
 
 ## REFERENCE GENOME
@@ -70,9 +71,11 @@ refgenome : $(H99_GENOME)
 
 run_aimhii : $(FULL_OUTPUT)
 
-test : $(SUBSET_OUTPUT)
+run_subset : $(SUBSET_OUTPUT)
 
-subset : $(READ1_FASTQ_SUBSET) $(READ2_FASTQ_SUBSET) 
+subset_data : $(READ1_FASTQ_SUBSET) $(READ2_FASTQ_SUBSET) 
+
+full_data : $(READ1_FASTQ) $(READ2_FASTQ)
 
 extract :
 	$(AIMHII_DIR)/extract_bwa_chimeras.py $(BWA_DIR)/merged.bam --insert $(PZPNAT_SEQ) --table $(RESULTS_DIR)/extract_results.csv 
@@ -96,7 +99,8 @@ $(BWA_DIR) :
 #===============================================================================
 # Run It!
 #===============================================================================
-$(RESULTS_DIR)/%_results.csv : $(BWA_DIR) $(H99_GENOME) $(FASTQ_DIR)/%_R1_001.fastq.gz $(FASTQ_DIR)/%_R2_001.fastq.gz 
+# $(RESULTS_DIR)/%_results.csv : $(BWA_DIR) $(H99_GENOME) $(FASTQ_DIR)/%_R1_001.fastq.gz $(FASTQ_DIR)/%_R2_001.fastq.gz 
+$(RESULTS_DIR)/%_results.csv : $(BWA_DIR) $(H99_GENOME) $(FASTQ_DIR)/%_R1.fastq.gz $(FASTQ_DIR)/%_R2.fastq.gz 
 	$(dir_guard)
 	$(AIMHII) --threads $(NUMTHREADS) --outfile $@.tmp -t $(word 1,$^) $(word 2,$^) $(PZPNAT_SEQ) $(ADAPTER_FASTA) $(word 3,$^) $(word 4,$^)
 	mv $@.tmp $@
@@ -104,13 +108,17 @@ $(RESULTS_DIR)/%_results.csv : $(BWA_DIR) $(H99_GENOME) $(FASTQ_DIR)/%_R1_001.fa
 #===============================================================================
 # Generate sample subset
 #===============================================================================
-$(FASTQ_DIR)/sample_R%_001.fastq.gz : $(FASTQ_DIR)/SE-WHM1_and_Undetermined_R%_001.fastq.gz
+$(FASTQ_DIR)/subset_%_R1.fastq.gz $(FASTQ_DIR)/subset_%_R2.fastq.gz : 
 	$(dir_guard)
-	# seqtk sample -s $(RANDOM_SEED) $< $(NUM_SUBSET) > $(basename $@).tmp
-	# gzip  $(basename $@).tmp
-	# mv $(basename $@).tmp.gz $@
-	seqtk sample -s $(RANDOM_SEED) $< $(NUM_SUBSET) | gzip > $@.tmp.gz
-	mv $@.tmp.gz $@
+	fastq-dump -X $(NUM_SUBSET) --split-files --gzip $* --outdir $(@D)
+	mv $(@D)/$*_1.fastq.gz $(@D)/subset_$*_R1.fastq.gz
+	mv $(@D)/$*_2.fastq.gz $(@D)/subset_$*_R2.fastq.gz
+
+$(FASTQ_DIR)/full_%_R1.fastq.gz $(FASTQ_DIR)/full_%_R2.fastq.gz : 
+	$(dir_guard)
+	fastq-dump --split-files --gzip $* --outdir $(@D)
+	mv $(@D)/$*_1.fastq.gz $(@D)/full_$*_R1.fastq.gz
+	mv $(@D)/$*_2.fastq.gz $(@D)/full_$*_R2.fastq.gz
 
 $(FASTQ_DIR)/SE-WHM1_and_Undetermined_R%_001.fastq.gz : $(ORIGINAL_FASTQ_DIR)/SE-WHM1_and_Undetermined_R%_001.fastq.gz
 	$(dir_guard)

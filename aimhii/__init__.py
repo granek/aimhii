@@ -8,7 +8,7 @@ import tempfile, shutil, atexit
 import sys
 import signal
 import fileinput
-import extract_bwa_chimeras
+import extract_chimeras
 
 def main():
     parser = argparse.ArgumentParser(description="Extract all reads in SAM_FILE that map to REF_NAME, or have pair that maps to it (including fusion matches)")
@@ -62,7 +62,7 @@ def main():
 
     run_samtools_index(final_bamname)
 
-    extract_bwa_chimeras.run_analysis(final_bamname, args.minreads, args.maxgap, args.outfile, args.INSERT_SEQ, insertonly=True)
+    extract_chimeras.run_analysis(final_bamname, args.minreads, args.maxgap, args.outfile, args.INSERT_SEQ, insertonly=True)
 
 
 def run_fastqmcf(adapter_file, fastq_file_list, outdir):
@@ -213,9 +213,9 @@ def concatenate_files(outfilename,filelist):
 
 
 ##--------------------------------
-## Run extract_bwa_chimeras.py
+## Run extract_chimeras.py
 ##--------------------------------
-# python2.7 scripts/extract_bwa_chimeras.py bwa/syn.merge.bam --junction results/syn.merge.junc.tmp --fusionreads results/syn.merge.fusread.tmp --insert synthetic/syn_insert.fa
+# python2.7 scripts/extract_chimeras.py bwa/syn.merge.bam --junction results/syn.merge.junc.tmp --fusionreads results/syn.merge.fusread.tmp --insert synthetic/syn_insert.fa
 # mv results/syn.merge.junc.tmp results/syn.merge.junc
 # mv results/syn.merge.fusread.tmp results/syn.merge.fusread
 

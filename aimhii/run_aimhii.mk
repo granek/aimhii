@@ -79,7 +79,7 @@ subset_data : $(READ1_FASTQ_SUBSET) $(READ2_FASTQ_SUBSET)
 full_data : $(READ1_FASTQ) $(READ2_FASTQ)
 
 extract :
-	$(AIMHII_DIR)/extract_bwa_chimeras.py $(BWA_DIR)/merged.bam --insert $(PZPNAT_SEQ) --table $(RESULTS_DIR)/extract_results.csv 
+	$(AIMHII_DIR)/extract_chimeras.py $(BWA_DIR)/merged.bam --insert $(PZPNAT_SEQ) --table $(RESULTS_DIR)/extract_results.csv 
 
 
 #===============================================================================

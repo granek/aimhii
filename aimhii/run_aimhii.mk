@@ -62,7 +62,8 @@ H99_SEQ_URL := "ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF_000149245.1_CNA3/$(H9
 ##------------------------------------------------------------
 ## BINARIES
 ##------------------------------------------------------------
-AIMHII := $(AIMHII_DIR)/aimhii.py
+# AIMHII := $(AIMHII_DIR)/aimhii.py
+AIMHII ?= aimhii
 
 ##------------------------------------------------------------
 ## PHONY RULES

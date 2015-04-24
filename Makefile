@@ -1,1 +1,1 @@
-scripts/run_aimhii.mk
+aimhii/run_aimhii.mk

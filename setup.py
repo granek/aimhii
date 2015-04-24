@@ -29,7 +29,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://bitbucket.org/granek/aimhii',
+    url='http://granek.bitbucket.org/projects/aimhii',
 
     # Author details
     author='Josh Granek',

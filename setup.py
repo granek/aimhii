@@ -14,7 +14,7 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the relevant file
-with open(path.join(here, 'DESCRIPTION.rst')) as f:
+with open(path.join(here, 'README.rst')) as f:
     long_description = f.read()
 
 setup(
@@ -23,7 +23,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.5.0',
+    version='0.5.2',
 
     description='A pipeline for mapping insertion mutants from whole genome shotgun data',
     long_description=long_description,
@@ -49,7 +49,7 @@ setup(
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
-        'Topic :: Scientific/Engineering :: Bio-Informatics'
+        'Topic :: Scientific/Engineering :: Bio-Informatics',
     
         # Pick your license as you wish (should match "license" above)
         'License :: OSI Approved :: MIT License',
@@ -75,7 +75,7 @@ setup(
         'numpy>=1.8.1',
         'biopython>=1.64',
         'matplotlib>=1.3.1',
-        'pysam>=0.8.0',
+        'pysam>=0.7.7',
         'HTSeq>=0.6.1'
         ],
 

@@ -1,10 +1,9 @@
-# /ssh:gems:/home/josh/collabs/AlspaughLab/aimhii/scripts/run_aimhii.mk
 # make run_aimhii NUMTHREADS=12
 
 ##------------------------------------------------------------
 ## MISC
 ##------------------------------------------------------------
-NUMTHREADS ?= 12
+NUMTHREADS ?= 2
 dir_guard=@mkdir -p $(@D)
 RANDOM_SEED := 1
 NUM_SUBSET ?= 200000
@@ -13,10 +12,7 @@ SRA_ACCESSION := SRR1964709
 ##------------------------------------------------------------
 ## GLOBAL DIRECTORIES
 ##------------------------------------------------------------
-BASE_DIR := $(COLLAB)/AlspaughLab
-AIMHII_DIR := $(BASE_DIR)/aimhii/scripts
-INFO_DIR := $(BASE_DIR)/aimhii/info
-ORIGINAL_FASTQ_DIR := /nfs/gems_sata/alspaugh/raw_fastqs
+INFO_DIR := info
 FASTQ_DIR := raw_fastqs
 ##------------------------------------------------------------
 ## LOCAL DIRECTORIES
@@ -62,7 +58,6 @@ H99_SEQ_URL := "ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF_000149245.1_CNA3/$(H9
 ##------------------------------------------------------------
 ## BINARIES
 ##------------------------------------------------------------
-# AIMHII := $(AIMHII_DIR)/aimhii.py
 AIMHII ?= aimhii
 
 ##------------------------------------------------------------
@@ -79,7 +74,7 @@ subset_data : $(READ1_FASTQ_SUBSET) $(READ2_FASTQ_SUBSET)
 full_data : $(READ1_FASTQ) $(READ2_FASTQ)
 
 extract :
-	$(AIMHII_DIR)/extract_chimeras.py $(BWA_DIR)/merged.bam --insert $(PZPNAT_SEQ) --table $(RESULTS_DIR)/extract_results.csv 
+	extract_chimeras $(BWA_DIR)/merged.bam --insert $(PZPNAT_SEQ) --table $(RESULTS_DIR)/extract_results.csv 
 
 
 #===============================================================================
@@ -120,10 +115,6 @@ $(FASTQ_DIR)/full_%_R1.fastq.gz $(FASTQ_DIR)/full_%_R2.fastq.gz :
 	fastq-dump --split-files --gzip $* --outdir $(@D)
 	mv $(@D)/$*_1.fastq.gz $(@D)/full_$*_R1.fastq.gz
 	mv $(@D)/$*_2.fastq.gz $(@D)/full_$*_R2.fastq.gz
-
-$(FASTQ_DIR)/SE-WHM1_and_Undetermined_R%_001.fastq.gz : $(ORIGINAL_FASTQ_DIR)/SE-WHM1_and_Undetermined_R%_001.fastq.gz
-	$(dir_guard)
-	ln -s $< $@
 
 #===============================================================================
 # CLEAN UP

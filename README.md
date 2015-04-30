@@ -28,6 +28,7 @@ This is recommended for a standard desktop (Mac or Windows), which is unlikely t
 ## Run analysis from manuscript
 
 Both of these commands will output the results to the current directory.  The "subset" results are named `subset_SRR1964709_results.csv`, the "full" results are named `SRR1964709_results.csv`.   An error such as "Are you trying to connect to a TLS-enabled daemon without TLS?", may indicate that docker has not been started.
+
 -   `docker run -v $PWD:/root/aimhii/results -t granek/aimhii make run_subset` to do a test analysis on a subset of the data
 -   `docker run -v $PWD:/root/aimhii/results -t granek/aimhii make run_aimhii` to perform the full analysis from the manuscript.
 
@@ -67,6 +68,7 @@ This requires that the 4 are already installed.
 ## Setup a Python Virtual Environment (strongly recommended)
 
 This assumes you have Python [pip](https://pypi.python.org/pypi/pip) and [virtualenv](https://pypi.python.org/pypi/virtualenv) installed.  If [virtualenv](https://pypi.python.org/pypi/virtualenv) is not installed try the command `pip install virtualenv` to install it.  If [pip](https://pypi.python.org/pypi/pip) is not installed, you will need to [install](https://pip.pypa.io/en/stable/installing.html) it first.
+
 1.  `virtualenv aimhii_venv` to set up a virtual environment (see [virtualenv guide](http://docs.python-guide.org/en/latest/dev/virtualenvs/) for details).  **Note:** If the default version of python on your system is older than 2.7, you might need to specify the path to python2.7, for example: `virtualenv -p /usr/local/bin/python2.7 aimhii_venv`
 2.  `source aimhii_venv/bin/activate` to enter the virtual environment.  Use the command `deactivate` to leave virtual environment.
 

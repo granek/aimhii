@@ -1,5 +1,7 @@
 There are several different ways to install AIM-HII:
-1.  1: recommended for a standard desktop
+
+
+1.  Docker: recommended for a standard desktop
 2.  2: recommended for a bioinformatics server
 3.  3: recommended for pros
 
@@ -118,3 +120,7 @@ All of these packages will be installed by `pip aimhii`.  They can be installed 
 -   matplotlib
 -   numpy
 -   pysam
+
+# Test
+
+[test linking](docker_install.md)

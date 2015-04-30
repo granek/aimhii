@@ -100,6 +100,7 @@ $(RESULTS_DIR)/%_results.csv : $(BWA_DIR) $(H99_GENOME) $(FASTQ_DIR)/%_R1.fastq.
 	$(dir_guard)
 	$(AIMHII) --threads $(NUMTHREADS) --outfile $@.tmp -t $(word 1,$^) $(word 2,$^) $(PZPNAT_SEQ) $(ADAPTER_FASTA) $(word 3,$^) $(word 4,$^)
 	mv $@.tmp $@
+	cat $@
 
 #===============================================================================
 # Generate sample subset

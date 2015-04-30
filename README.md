@@ -1,4 +1,13 @@
-# Docker Installation: recommended for a standard desktop
+There are several different ways to install AIM-HII:
+1.  1: recommended for a standard desktop
+2.  2: recommended for a bioinformatics server
+3.  3: recommended for pros
+
+The bioinformatics software that AIM-HII depends on is described in the 4 section.
+
+# Docker Installation
+
+This is recommended for a standard desktop (Mac or Windows), which is unlikely to have required bioinformatic software installed.  
 
 ## Install Docker
 
@@ -46,8 +55,9 @@ A similar command will work if the input files are in the current directory, or 
 
 `docker run -i -t granek/aimhii /bin/bash`
 
-# Pip Installation: recommended for a server with common bioinformatics software installed
+# Pip Installation
 
+This is recommended for a server with common bioinformatics software already installed.
 This requires that the 4 are already installed.
 
 ## Setup a Python Virtual Environment (strongly recommended)
@@ -68,9 +78,9 @@ This assumes you have Python [pip](https://pypi.python.org/pypi/pip) and [virtua
 3.  `make run_subset` to do a test analysis on a subset of the data.
 4.  `make run_aimhii` to perform the full analysis from the manuscript.
 
-# Clone git repository: recommended for pros
+# Clone Repository
 
-This requires that the 4 are already installed.
+This is only recommended for "pros": you are familiar with git and want to explore the source code.  This method requires that the 4 are already installed.
 
 ## Download source code
 
@@ -108,7 +118,3 @@ All of these packages will be installed by `pip aimhii`.  They can be installed 
 -   matplotlib
 -   numpy
 -   pysam
-
-# Test
-
-test linking

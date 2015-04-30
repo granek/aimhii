@@ -7,7 +7,7 @@ There are several different ways to install AIM-HII:
 
 The bioinformatics software that AIM-HII depends on is described in the 4 section.
 
-Note that in the instructions below, text that is in `fixed width font` is should be typed at the command line.
+Note that in the instructions below, text that has `this formatting` should be typed at the command line.
 
 # Docker Installation
 

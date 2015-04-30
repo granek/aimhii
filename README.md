@@ -1,41 +1,6 @@
-<div id="table-of-contents">
-<h2>Table of Contents</h2>
-<div id="text-table-of-contents">
-<ul>
-<li><a href="#sec-1">Docker Installation: recommended for a standard desktop</a>
-<ul>
-<li><a href="#sec-1-1">Install Docker</a></li>
-<li><a href="#sec-1-2">Run analysis from manuscript</a></li>
-<li><a href="#sec-1-3">Analyze your own data</a></li>
-<li><a href="#sec-1-4">Advanced: Access shell in AIMHII docker container</a></li>
-</ul>
-</li>
-<li><a href="#sec-2">Pip Installation: recommended for a server with common bioinformatics software installed</a>
-<ul>
-<li><a href="#sec-2-1">Setup a Python Virtual Environment (strongly recommended)</a></li>
-<li><a href="#sec-2-2">Use pip to install AIMHII</a></li>
-<li><a href="#sec-2-3">To reproduce the analysis from the manuscript (Optional)</a></li>
-</ul>
-</li>
-<li><a href="#sec-3">Clone git repository: recommended for pros</a>
-<ul>
-<li><a href="#sec-3-1">Download source code</a></li>
-<li><a href="#sec-3-2">To reproduce the analysis from the manuscript (Optional)</a></li>
-</ul>
-</li>
-<li><a href="#sec-4">Software Dependencies</a>
-<ul>
-<li><a href="#sec-4-1">Only required to replicate analysis from manuscript</a></li>
-<li><a href="#sec-4-2">Python libraries</a></li>
-</ul>
-</li>
-</ul>
-</div>
-</div>
+# Docker Installation: recommended for a standard desktop
 
-# Docker Installation: recommended for a standard desktop<a id="sec-1" name="sec-1"></a>
-
-## Install Docker<a id="sec-1-1" name="sec-1-1"></a>
+## Install Docker
 
 1.  See installation instructions for [Mac](https://docs.docker.com/installation/mac/), [Windows](https://docs.docker.com/installation/windows/), [etc](https://docs.docker.com/installation/).
 2.  `docker pull granek/aimhii` to download aimhii image
@@ -47,13 +12,13 @@
     1.  `boot2docker start` start docker daemon
     2.  ~eval "$(boot2docker shellinit)"~
 
-## Run analysis from manuscript<a id="sec-1-2" name="sec-1-2"></a>
+## Run analysis from manuscript
 
 Both of these commands will output the results to the current directory.  The "subset" results are named `subset_SRR1964709_results.csv`, the "full" results are named `SRR1964709_results.csv`.   An error such as "Are you trying to connect to a TLS-enabled daemon without TLS?", may indicate that docker has not been started.
 -   `docker run -v $PWD:/root/aimhii/results -t granek/aimhii make run_subset` to do a test analysis on a subset of the data
 -   `docker run -v $PWD:/root/aimhii/results -t granek/aimhii make run_aimhii` to perform the full analysis from the manuscript.
 
-## Analyze your own data<a id="sec-1-3" name="sec-1-3"></a>
+## Analyze your own data
 
 Running `aimhii` from a Docker container requires one step in addition to what you would normally do if it was installed directly on your computer: you have to tell docker where to find the input files, and where to put the results.  If all of the input files are in the current directory, something like the following command will work, saving the results to `results.csv` in the current directory.
 
@@ -77,47 +42,47 @@ A similar command will work if the input files are in the current directory, or 
     /mydir/fastq_dir/R2.fastq.gz \
     --outfile /mydir/results.csv
 
-## Advanced: Access shell in AIMHII docker container<a id="sec-1-4" name="sec-1-4"></a>
+## Advanced: Access shell in AIMHII docker container
 
 `docker run -i -t granek/aimhii /bin/bash`
 
-# Pip Installation: recommended for a server with common bioinformatics software installed<a id="sec-2" name="sec-2"></a>
+# Pip Installation: recommended for a server with common bioinformatics software installed
 
 This requires that the 4 are already installed.
 
-## Setup a Python Virtual Environment (strongly recommended)<a id="sec-2-1" name="sec-2-1"></a>
+## Setup a Python Virtual Environment (strongly recommended)
 
 This assumes you have Python [pip](https://pypi.python.org/pypi/pip) and [virtualenv](https://pypi.python.org/pypi/virtualenv) installed.  If [virtualenv](https://pypi.python.org/pypi/virtualenv) is not installed try the command `pip install virtualenv` to install it.  If [pip](https://pypi.python.org/pypi/pip) is not installed, you will need to [install](https://pip.pypa.io/en/stable/installing.html) it first.
 1.  `virtualenv aimhii_venv` to set up a virtual environment (see [virtualenv guide](http://docs.python-guide.org/en/latest/dev/virtualenvs/) for details).  **Note:** If the default version of python on your system is older than 2.7, you might need to specify the path to python2.7, for example: `virtualenv -p /usr/local/bin/python2.7 aimhii_venv`
 2.  `source aimhii_venv/bin/activate` to enter the virtual environment.  Use the command `deactivate` to leave virtual environment.
 
-## Use pip to install AIMHII<a id="sec-2-2" name="sec-2-2"></a>
+## Use pip to install AIMHII
 
 1.  `pip install numpy` (HTSeq needs numpy installed beforehand)
 2.  `pip install aimhii`
 
-## To reproduce the analysis from the manuscript (Optional)<a id="sec-2-3" name="sec-2-3"></a>
+## To reproduce the analysis from the manuscript (Optional)
 
 1.  `git clone https://granek@bitbucket.org/granek/aimhii.git`
 2.  `cd aimhii`
 3.  `make run_subset` to do a test analysis on a subset of the data.
 4.  `make run_aimhii` to perform the full analysis from the manuscript.
 
-# Clone git repository: recommended for pros<a id="sec-3" name="sec-3"></a>
+# Clone git repository: recommended for pros
 
 This requires that the 4 are already installed.
 
-## Download source code<a id="sec-3-1" name="sec-3-1"></a>
+## Download source code
 
 1.  `git clone https://granek@bitbucket.org/granek/aimhii.git`
 
-## To reproduce the analysis from the manuscript (Optional)<a id="sec-3-2" name="sec-3-2"></a>
+## To reproduce the analysis from the manuscript (Optional)
 
 1.  `cd aimhii`
 2.  `make run_subset` to do a test analysis on a subset of the data.
 3.  `make run_aimhii` to perform the full analysis from the manuscript.
 
-# Software Dependencies<a id="sec-4" name="sec-4"></a>
+# Software Dependencies
 
 The versions given below have been tested with this software, and are known to work, but earlier versions may work perfectly well:
 
@@ -127,14 +92,14 @@ The versions given below have been tested with this software, and are known to w
 -   [python2.7](https://www.python.org/downloads/release/python-279/)
 -   [pip](https://pip.pypa.io/en/latest/installing.html) (already included in python version 2.7.9 and higher)
 
-## Only required to replicate analysis from manuscript<a id="sec-4-1" name="sec-4-1"></a>
+## Only required to replicate analysis from manuscript
 
 -   [gnumake](http://www.gnu.org/software/make/)
 -   [git](http://git-scm.com/downloads)
 -   [SRA Toolkit](http://www.ncbi.nlm.nih.gov/books/NBK158900/#SRA_download.how_do_i_download_and_insta) (version 2.3.5)
 -   [curl](http://curl.haxx.se/)
 
-## Python libraries<a id="sec-4-2" name="sec-4-2"></a>
+## Python libraries
 
 All of these packages will be installed by `pip aimhii`.  They can be installed separately by running `pip install -r requirements.txt`, using the requirements.txt file included in the repository.
 
@@ -143,3 +108,7 @@ All of these packages will be installed by `pip aimhii`.  They can be installed 
 -   matplotlib
 -   numpy
 -   pysam
+
+# Test
+
+test linking

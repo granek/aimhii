@@ -1,42 +1,145 @@
-1.  Download this repository 
-    -   Using git: `git clone https://bitbucket.org/granek/aimhii.git`
-    -   Alternatively, download a zip file: <https://bitbucket.org/granek/aimhii/downloads>
-2.  Install the prerequisites detailed below.
-3.  Move into the repository directory: `cd aimhii`
-4.  Run the analysis: `make`
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">Docker Installation: recommended for a standard desktop</a>
+<ul>
+<li><a href="#sec-1-1">Install Docker</a></li>
+<li><a href="#sec-1-2">Run analysis from manuscript</a></li>
+<li><a href="#sec-1-3">Analyze your own data</a></li>
+<li><a href="#sec-1-4">Advanced: Access shell in AIMHII docker container</a></li>
+</ul>
+</li>
+<li><a href="#sec-2">Pip Installation: recommended for a server with common bioinformatics software installed</a>
+<ul>
+<li><a href="#sec-2-1">Setup a Python Virtual Environment (strongly recommended)</a></li>
+<li><a href="#sec-2-2">Use pip to install AIMHII</a></li>
+<li><a href="#sec-2-3">To reproduce the analysis from the manuscript (Optional)</a></li>
+</ul>
+</li>
+<li><a href="#sec-3">Clone git repository: recommended for pros</a>
+<ul>
+<li><a href="#sec-3-1">Download source code</a></li>
+<li><a href="#sec-3-2">To reproduce the analysis from the manuscript (Optional)</a></li>
+</ul>
+</li>
+<li><a href="#sec-4">Software Dependencies</a>
+<ul>
+<li><a href="#sec-4-1">Only required to replicate analysis from manuscript</a></li>
+<li><a href="#sec-4-2">Python libraries</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
 
-# Prerequisites
+# Docker Installation: recommended for a standard desktop<a id="sec-1" name="sec-1"></a>
 
-## Software
+## Install Docker<a id="sec-1-1" name="sec-1-1"></a>
 
-The versions given below have been tested with this repository, and are known to work, but earlier versions may work perfectly well:
-
--   [BWA](http://bio-bwa.sourceforge.net/) (version 0.7.5a-r405)
--   [NCBI SRA Toolkit](http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?view=software) (version 2.3.5)
-
--   Likely to be installed on most Linux servers
-
-    -   [Python 2.7](https://www.python.org/download/releases/2.7.8/)
-    -   [curl](http://curl.haxx.se/download.html)
-
--   Python libraries
-
-    All of these packages can be installed using [pip](https://pypi.python.org/pypi/pip) by running `pip install -r requirements.txt`, using the requirements.txt file included in the repository.
-    -   biopython
-    -   HTSeq
-    -   matplotlib
-    -   numpy
-    -   pysam
+1.  See installation instructions for [Mac](https://docs.docker.com/installation/mac/), [Windows](https://docs.docker.com/installation/windows/), [etc](https://docs.docker.com/installation/).
+2.  `docker pull granek/aimhii` to download aimhii image
     
-    You might consider installing and running in a [Virtual Environment](https://pypi.python.org/pypi/virtualenv) (see [virtualenv guide](http://docs.python-guide.org/en/latest/dev/virtualenvs/)), in which case the following commands will get you running :
-    1.  `git clone https://bitbucket.org/granek/aimhii.git`
-    2.  `virtualenv venv`
-        -   **Note:** If the default version of python on your system is older than 2.7, you might need to specify the path to python2.7, for example: `virtualenv -p /usr/local/bin/python2.7 venv`
-    3.  `source venv/bin/activate`
-    4.  `cd aimhii`
-    5.  `pip install -r info/requirements.txt`
-    6.  `make`
+    **Note:** If running the following commands on a machine other than Mac or Windows, you may need to use the command `sudo docker` instead of just `docker`.
 
-## Raw Sequence data
+-   To start Docker daemon from the shell on a Mac
 
-Running `make` will automatically download the [[<http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE56353][raw> data] from this work is available from [GEO](http://www.ncbi.nlm.nih.gov/geo/).
+    1.  `boot2docker start` start docker daemon
+    2.  ~eval "$(boot2docker shellinit)"~
+
+## Run analysis from manuscript<a id="sec-1-2" name="sec-1-2"></a>
+
+Both of these commands will output the results to the current directory.  The "subset" results are named `subset_SRR1964709_results.csv`, the "full" results are named `SRR1964709_results.csv`.   An error such as "Are you trying to connect to a TLS-enabled daemon without TLS?", may indicate that docker has not been started.
+-   `docker run -v $PWD:/root/aimhii/results -t granek/aimhii make run_subset` to do a test analysis on a subset of the data
+-   `docker run -v $PWD:/root/aimhii/results -t granek/aimhii make run_aimhii` to perform the full analysis from the manuscript.
+
+## Analyze your own data<a id="sec-1-3" name="sec-1-3"></a>
+
+Running `aimhii` from a Docker container requires one step in addition to what you would normally do if it was installed directly on your computer: you have to tell docker where to find the input files, and where to put the results.  If all of the input files are in the current directory, something like the following command will work, saving the results to `results.csv` in the current directory.
+
+    docker run -v $PWD:/mydir \
+    -t granek/aimhii aimhii \
+    /mydir/genome.fna \
+    /mydir/insert.fasta \
+    /mydir/adapter.fasta \
+    /mydir/R1.fastq.gz \
+    /mydir/R2.fastq.gz \
+    --outfile /mydir/results.csv
+
+A similar command will work if the input files are in the current directory, or directories within the current directory.  For example if the FASTQ files are in a subdirectory call `fastq_dir`
+
+    docker run -v $PWD:/mydir \
+    -t granek/aimhii aimhii \
+    /mydir/genome.fna \
+    /mydir/insert.fasta \
+    /mydir/adapter.fasta \
+    /mydir/fastq_dir/R1.fastq.gz \
+    /mydir/fastq_dir/R2.fastq.gz \
+    --outfile /mydir/results.csv
+
+## Advanced: Access shell in AIMHII docker container<a id="sec-1-4" name="sec-1-4"></a>
+
+`docker run -i -t granek/aimhii /bin/bash`
+
+# Pip Installation: recommended for a server with common bioinformatics software installed<a id="sec-2" name="sec-2"></a>
+
+This requires that the 4 are already installed.
+
+## Setup a Python Virtual Environment (strongly recommended)<a id="sec-2-1" name="sec-2-1"></a>
+
+This assumes you have Python [pip](https://pypi.python.org/pypi/pip) and [virtualenv](https://pypi.python.org/pypi/virtualenv) installed.  If [virtualenv](https://pypi.python.org/pypi/virtualenv) is not installed try the command `pip install virtualenv` to install it.  If [pip](https://pypi.python.org/pypi/pip) is not installed, you will need to [install](https://pip.pypa.io/en/stable/installing.html) it first.
+1.  `virtualenv aimhii_venv` to set up a virtual environment (see [virtualenv guide](http://docs.python-guide.org/en/latest/dev/virtualenvs/) for details).  **Note:** If the default version of python on your system is older than 2.7, you might need to specify the path to python2.7, for example: `virtualenv -p /usr/local/bin/python2.7 aimhii_venv`
+2.  `source aimhii_venv/bin/activate` to enter the virtual environment.  Use the command `deactivate` to leave virtual environment.
+
+## Use pip to install AIMHII<a id="sec-2-2" name="sec-2-2"></a>
+
+1.  `pip install numpy` (HTSeq needs numpy installed beforehand)
+2.  `pip install aimhii`
+
+## To reproduce the analysis from the manuscript (Optional)<a id="sec-2-3" name="sec-2-3"></a>
+
+1.  `git clone https://granek@bitbucket.org/granek/aimhii.git`
+2.  `cd aimhii`
+3.  `make run_subset` to do a test analysis on a subset of the data.
+4.  `make run_aimhii` to perform the full analysis from the manuscript.
+
+# Clone git repository: recommended for pros<a id="sec-3" name="sec-3"></a>
+
+This requires that the 4 are already installed.
+
+## Download source code<a id="sec-3-1" name="sec-3-1"></a>
+
+1.  `git clone https://granek@bitbucket.org/granek/aimhii.git`
+
+## To reproduce the analysis from the manuscript (Optional)<a id="sec-3-2" name="sec-3-2"></a>
+
+1.  `cd aimhii`
+2.  `make run_subset` to do a test analysis on a subset of the data.
+3.  `make run_aimhii` to perform the full analysis from the manuscript.
+
+# Software Dependencies<a id="sec-4" name="sec-4"></a>
+
+The versions given below have been tested with this software, and are known to work, but earlier versions may work perfectly well:
+
+-   [ea-utils](https://code.google.com/p/ea-utils/) (fastq-mcf and fastq-join)
+-   [BWA](http://bio-bwa.sourceforge.net/) (version 0.7.5a-r405)
+-   [samtools](http://samtools.sourceforge.net/)
+-   [python2.7](https://www.python.org/downloads/release/python-279/)
+-   [pip](https://pip.pypa.io/en/latest/installing.html) (already included in python version 2.7.9 and higher)
+
+## Only required to replicate analysis from manuscript<a id="sec-4-1" name="sec-4-1"></a>
+
+-   [gnumake](http://www.gnu.org/software/make/)
+-   [git](http://git-scm.com/downloads)
+-   [SRA Toolkit](http://www.ncbi.nlm.nih.gov/books/NBK158900/#SRA_download.how_do_i_download_and_insta) (version 2.3.5)
+-   [curl](http://curl.haxx.se/)
+
+## Python libraries<a id="sec-4-2" name="sec-4-2"></a>
+
+All of these packages will be installed by `pip aimhii`.  They can be installed separately by running `pip install -r requirements.txt`, using the requirements.txt file included in the repository.
+
+-   biopython
+-   HTSeq
+-   matplotlib
+-   numpy
+-   pysam

@@ -18,8 +18,8 @@ This is recommended for a standard desktop (Mac or Windows), which is unlikely t
 1.  See installation instructions for [Mac](https://docs.docker.com/installation/mac/), [Windows](https://docs.docker.com/installation/windows/), [etc](https://docs.docker.com/installation/).
 2.  On Mac and Windows, launch Boot2docker.  All subsequent commands will be run in the terminal launched by Boot2docker.
 3.  `docker pull granek/aimhii` to download aimhii image
-    
-    **Note:** If running the following commands on a machine other than Mac or Windows, you may need to use the command `sudo docker` instead of just `docker`.
+
+**Notes:** On other operating systems, the docker daemon may run automatically after installation.  Also, on other operating systems, you may need to use the command `sudo docker` instead of just `docker`.
 
 ## Run analysis from manuscript
 
@@ -120,13 +120,3 @@ All of these packages will be installed by `pip aimhii`.  They can be installed 
 -   matplotlib
 -   numpy
 -   pysam
-
-<div id="footnotes">
-<h2 class="footnotes">Footnotes: </h2>
-<div id="text-footnotes">
-
-<div class="footdef"><sup><a id="fn.1" name="fn.1" class="footnum" href="#fnr.1">1</a></sup> <p>On other operating systems, the docker daemon may run automatically after installation</p></div>
-
-
-</div>
-</div>

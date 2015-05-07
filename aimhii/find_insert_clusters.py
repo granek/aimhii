@@ -14,6 +14,11 @@ import numpy as np
 # ambiguous_re = re.compile("ambiguous\[(.*)\]")
 # sample_re = re.compile("(.*)_[ACGT]{6}_L002_R1_001")
 
+import logging
+logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
+
 LEFT="left"
 RIGHT="right"
 CLUSTER_GFF_TYPE="experimental_result_region"
@@ -115,19 +120,19 @@ def find_cluster_pairs(cluster_list,max_gap_size):
         cur_cluster = cluster_list[i]
         if i == len(cluster_list)-1:
             metacluster_list.append(ClusterSingleton(cur_cluster))
-            print >>sys.stderr, "Last cluster is a singleton:", metacluster_list[-1]
+            logger.debug("Last cluster is a singleton: {0}".format(metacluster_list[-1]))
             break
         else:
             next_cluster = cluster_list[i+1]
 
-        print >>sys.stderr, "cur_cluster:{0}\tnext_cluster:{1}".format(cur_cluster, next_cluster)
+        logger.debug("cur_cluster:{0}\tnext_cluster:{1}".format(cur_cluster, next_cluster))
         if (cur_cluster.iv.chrom != next_cluster.iv.chrom):
-            print >>sys.stderr, "Last cluster on chrom:", cur_cluster
+            logger.debug("Last cluster on chrom: {0}".format(cur_cluster))
             metacluster_list.append(ClusterSingleton(cur_cluster))
-            print >>sys.stderr, "Found a cluster singleton:", metacluster_list[-1]
+            logger.debug("Found a cluster singleton: {0}".format(metacluster_list[-1]))
             i += 1
         elif cur_cluster.insertion_side == RIGHT and next_cluster.insertion_side == LEFT:
-            print >>sys.stderr, "Clusters face each other:", cur_cluster, next_cluster
+            logger.debug("Clusters face each other: {0} {1}".format(cur_cluster, next_cluster))
             # for clust in (cur_cluster, next_cluster):
             #     print >>sys.stderr, clust
             #     for read in clust.read_list:
@@ -135,16 +140,16 @@ def find_cluster_pairs(cluster_list,max_gap_size):
             metacluster = ClusterDoublet(cur_cluster,next_cluster)
             if metacluster.gap_length <= max_gap_size:
                 metacluster_list.append(metacluster)
-                print >>sys.stderr, "Found a cluster doublet:", metacluster.gap_length, metacluster
+                logger.debug("Found a cluster doublet: {0} {1}".format(metacluster.gap_length, metacluster))
                 i += 2
             else:
-                print >>sys.stderr, "Gap is too big:", cur_cluster, next_cluster, metacluster.gap_length
+                logger.debug("Gap is too big: {0} {1} {2}".format(cur_cluster, next_cluster, metacluster.gap_length))
                 metacluster_list.append(ClusterSingleton(cur_cluster))
-                print >>sys.stderr, "Found a cluster singleton:", metacluster_list[-1]
+                logger.debug("Found a cluster singleton: {0}".format(metacluster_list[-1]))
                 i += 1
         else:
             metacluster_list.append(ClusterSingleton(cur_cluster))
-            print >>sys.stderr, "Found a cluster singleton:", metacluster_list[-1]
+            logger.debug("Found a cluster singleton: {0}".format(metacluster_list[-1]))
             i += 1
     return metacluster_list
         
@@ -187,23 +192,19 @@ class ReadCluster:
     def __init__(self,aread):
         self.read_list = [aread]
         self.secondary_name = aread.secondary_frag.rname
-        print >>sys.stderr, aread, "||",  aread.iv, "||", repr(aread.iv), "||", aread.readname
+        logger.debug("||".join(map(str, (aread, aread.iv, repr(aread.iv), aread.readname))))
         self.iv = aread.iv.copy()
         # self.secondary_iv = aread.secondary_frag.iv.copy()
         self.secondary_iv = aread.secondary_frag.copy()
-        print "-"*60, "\nINIT CHECK STRAND", aread.iv, aread.secondary_frag, aread.insert_side, aread.insert_point, aread.readname
+        logger.debug("-"*60)
+        logger.debug("INIT CHECK STRAND {0}.iv {0}.secondary_frag {0}.insert_side {0}.insert_point {0}.readname".format(aread))
         self.iv.strand = self.secondary_iv.strand = "."
         self._insert_point = aread.insert_point
         self._insert_side = aread.insert_side
 
     def add_read(self, aread):
-        # print "self.iv", self.iv, type(self.iv)
-        # print "aread", aread
-        # print "aread.iv", aread.iv, type(aread.iv)
-        print "ADD CHECK STRAND", aread.iv, aread.secondary_frag, aread.insert_side, aread.insert_point, aread.readname
-
+        logger.debug("ADD CHECK STRAND {0}.iv {0}.secondary_frag {0}.insert_side {0}.insert_point {0}.readname".format(aread))
         self.iv.extend_to_include(aread.iv)
-        # print >>sys.stderr, self.secondary_iv
         self.secondary_iv.extend_to_include(aread.secondary_frag)
         self.read_list.append(aread)
 
@@ -288,7 +289,10 @@ class ReadCluster:
 
     @property
     def insert_details(self):
-        print self.secondary_iv, self.secondary_iv.start, self.secondary_iv.end, self.secondary_iv.start_d, self.secondary_iv.end_d
+        return " ".join(map(str,(self.secondary_iv, self.secondary_iv.start,
+                                 self.secondary_iv.end,
+                                 self.secondary_iv.start_d,
+                                 self.secondary_iv.end_d)))
     # def gap(self,other):
     #     return (other.iv.start - self.iv.end)-1
     def __iter__(self):
@@ -323,7 +327,7 @@ class ClusterDoublet(ClusterGroup):
         self.iv.extend_to_include(right_cluster.iv)
 
         self.insert_iv = left_cluster.secondary_iv.copy()
-        print >>sys.stderr, "left_cluster:{0.secondary_iv}\tright_cluster:{1.secondary_iv}".format(left_cluster,right_cluster)
+        logger.debug("left_cluster:{0.secondary_iv}\tright_cluster:{1.secondary_iv}".format(left_cluster,right_cluster))
         self.insert_iv.extend_to_include(right_cluster.secondary_iv)
         if left_cluster.secondary_iv.start > right_cluster.secondary_iv.start:
             self.insert_iv.strand = "-"

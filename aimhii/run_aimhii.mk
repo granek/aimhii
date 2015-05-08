@@ -59,6 +59,8 @@ H99_SEQ_URL := "ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF_000149245.1_CNA3/$(H9
 ## BINARIES
 ##------------------------------------------------------------
 AIMHII ?= aimhii
+MAKE_INSERTION ?= make_synthetic_insertion
+MAKE_RANDOM_SEQUENCE ?= make_random_sequence
 
 ##------------------------------------------------------------
 ## PHONY RULES
@@ -116,6 +118,73 @@ $(FASTQ_DIR)/full_%_R1.fastq.gz $(FASTQ_DIR)/full_%_R2.fastq.gz :
 	fastq-dump --split-files --gzip $* --outdir $(@D)
 	mv $(@D)/$*_1.fastq.gz $(@D)/full_$*_R1.fastq.gz
 	mv $(@D)/$*_2.fastq.gz $(@D)/full_$*_R2.fastq.gz
+
+#===============================================================================
+# Synthetic Sequences
+#===============================================================================
+SCRIPTS_DIR=$(ALSPAUGH)/make_synthetic/scripts
+SYN_DIR=synthetic
+SYNTHETIC_FASTQ_DIR=$(SYN_DIR)
+SYNTHETIC_FASTQS :=  syn_R1.fastq.gz syn_R2.fastq.gz
+SYNTHETIC_FASTQ_FULLPATH := $(addprefix $(SYNTHETIC_FASTQ_DIR)/, $(SYNTHETIC_FASTQS))
+SYNTHETIC_RESULTS := $(word 1, $(SYNTHETIC_FASTQ_FULLPATH:_R1.fastq.gz=_results.csv))
+SYN_REFSEQ := $(SYN_DIR)/syn_ref.fa # a synthetic reference sequence
+SYN_INSERTSEQ := $(SYN_DIR)/syn_insert.fa # a synthetic insert sequence
+SYN_MUTSEQ := $(SYN_DIR)/syn_mut.fa # the  synthetic reference sequence with insertions of SYN_INSERTSEQ
+SYNREF_AND_SYNINSERT_SEQ := $(SYN_DIR)/syn_concat.fa # concatenated synthetic reference and insert sequences (for mapping reference)
+# SYNREF_AND_SYNMUT := $(SYN_DIR)/syn_ref_and_mut.fa # concatenated synthetic reference and SYN_MUTSEQ (for simulated read generation)
+SYNREAD_LEN := 250
+FASTQ_SUFFIX=.fastq.gz
+
+
+syn : $(SYN_REFSEQ) $(SYN_INSERTSEQ) $(SYN_MUTSEQ) $(SYNTHETIC_FASTQ_FULLPATH) $(SYNTHETIC_RESULTS)
+	echo $(SYNTHETIC_RESULTS)
+
+$(SYN_DIR)/%_results.csv : $(BWA_DIR) $(SYN_REFSEQ) $(SYN_DIR)/%_R1.fastq.gz $(SYN_DIR)/%_R2.fastq.gz 
+	$(dir_guard)
+	$(AIMHII) --threads $(NUMTHREADS) --outfile $@.tmp -t $(word 1,$^) $(word 2,$^) $(SYN_INSERTSEQ) $(ADAPTER_FASTA) $(word 3,$^) $(word 4,$^)
+	mv $@.tmp $@
+	cat $@
+
+%_R1$(FASTQ_SUFFIX) %_R2$(FASTQ_SUFFIX) : %_ref.fa %_mut.fa # $(SYN_REFSEQ) $(SYN_MUTSEQ)
+	$(dir_guard)
+	$(eval SEQ1_R1 := $(basename $(word 1,$^))_R1.fastq)
+	$(eval SEQ1_R2 := $(basename $(word 1,$^))_R2.fastq)
+	$(eval SEQ2_R1 := $(basename $(word 2,$^))_R1.fastq)
+	$(eval SEQ2_R2 := $(basename $(word 2,$^))_R2.fastq)
+
+	wgsim -S 1 -N 100000 -1 $(SYNREAD_LEN) -2 $(SYNREAD_LEN) $(word 1,$^) $(SEQ1_R1) $(SEQ1_R2)
+	wgsim -S 2 -N 20000  -1 $(SYNREAD_LEN) -2 $(SYNREAD_LEN) $(word 2,$^) $(SEQ2_R1) $(SEQ2_R2)
+	cat $(SEQ1_R1) $(SEQ2_R1) | gzip -c > $*_R1$(FASTQ_SUFFIX)
+	cat $(SEQ1_R2) $(SEQ2_R2) | gzip -c > $*_R2$(FASTQ_SUFFIX)
+	rm -f $(SEQ1_R1) $(SEQ1_R2) $(SEQ2_R1) $(SEQ2_R2)
+
+$(SYNREF_AND_SYNINSERT_SEQ) : $(SYN_REFSEQ) $(SYN_INSERTSEQ)
+	$(dir_guard)
+	cat $(word 1,$^) $(word 2,$^) > $@.tmp
+	mv $@.tmp $@
+
+$(SYN_MUTSEQ) : $(SYN_REFSEQ) $(SYN_INSERTSEQ)
+	$(dir_guard)
+	$(MAKE_INSERTION) $(SYN_REFSEQ) $(SYN_INSERTSEQ) --position 90000 --delete 50 --output $@.tmp1
+	$(MAKE_INSERTION) $(SYN_REFSEQ) $(SYN_INSERTSEQ) --position 30000 --delete 1 --output $@.tmp2
+	$(MAKE_INSERTION) $(SYN_REFSEQ) $(SYN_INSERTSEQ) --position 10000 --delete 5 --invert --output $@.tmp3
+	$(MAKE_INSERTION) $(SYN_REFSEQ)$(SYN_INSERTSEQ) --position 800 --delete 0 --output $@.tmp4
+	cat $@.tmp1 $@.tmp2 $@.tmp3 $@.tmp4 > $@
+	rm -f $@.tmp1 $@.tmp2 $@.tmp3 $@.tmp4
+
+$(SYN_REFSEQ) :
+	$(dir_guard)
+	$(MAKE_RANDOM_SEQUENCE) --randseed 1 --prefix ref --lower --numseqs 1 --seqlen 100000 --output $@.tmp
+	mv $@.tmp $@
+
+$(SYN_INSERTSEQ) :
+	$(dir_guard)
+	$(MAKE_RANDOM_SEQUENCE) --randseed 2 --prefix insert --pad 10 --numseqs 1 --seqlen 2000 --output $@.tmp
+	mv $@.tmp $@
+
+cleansyn :
+	rm -rf $(SYN_DIR)
 
 #===============================================================================
 # CLEAN UP

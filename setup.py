@@ -107,7 +107,9 @@ setup(
     entry_points={
         'console_scripts': [
             'aimhii=aimhii:main',
-            'extract_chimeras=aimhii.extract_chimeras:main'
+            'extract_chimeras=aimhii.extract_chimeras:main',
+            'make_random_sequence=aimhii.make_random_sequence:main',
+            'make_synthetic_insertion=aimhii.make_synthetic_insertion:main'
         ],
     },
 )

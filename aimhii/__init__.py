@@ -10,6 +10,10 @@ import signal
 import fileinput
 import extract_chimeras
 
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 def main():
     parser = argparse.ArgumentParser(description="Extract all reads in SAM_FILE that map to REF_NAME, or have pair that maps to it (including fusion matches)")
     parser.add_argument("REF_GENOME", help="FASTA file containing reference genome that reads will be mapped to.")
@@ -71,7 +75,7 @@ def run_fastqmcf(adapter_file, fastq_file_list, outdir):
     for fastq_name in fastq_file_list:
         path_changed = os.path.join(outdir,(os.path.basename(fastq_name)))
         name_match = re.match("^(.+?)(\.fastq)?(\.gz)?$",path_changed,re.IGNORECASE)
-        print name_match.groups()
+        logger.debug(name_match.groups())
         # outname = re.sub("(.*)(\.fastq)?(\.gz)?",r'\1.trim\2\3',path_changed, re.IGNORECASE)
         outname = "".join([name_match.group(1), ".trim"] + [group for group in name_match.groups()[1:] if group != None])
         outfile_list.append(outname)
@@ -82,8 +86,9 @@ def run_fastqmcf(adapter_file, fastq_file_list, outdir):
     else:
         msg = "Maximum number of FASTQ files is 2 (for read pairs)."
         raise argparse.ArgumentTypeError(msg)
-    print >>sys.stderr, "\n\nTRIMMING READS"
-    print cmd
+    print >>sys.stderr, "-"*20 + "TRIMMING READS" + "-"*20
+    logger.debug("-"*20 + "TRIMMING READS" + "-"*20)
+    logger.debug(cmd)
     # See https://blog.nelhage.com/2010/02/a-very-subtle-bug/ for explanation of "preexec_fn" below
     subprocess.check_output(cmd, preexec_fn=lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL))
     return outfile_list
@@ -98,8 +103,9 @@ def run_fastqjoin(fastq_file_list, outdir):
     # mv final_fastqs/syn.join.tmp.gz final_fastqs/syn.join.fastq.gz
     outfile_template = os.path.join(outdir, "%.fastq.gz")
     cmd = ("fastq-join", fastq_file_list[0], fastq_file_list[1], "-o", outfile_template)
-    print >>sys.stderr, "\n\nJOINGING READS"
-    print cmd
+    print >>sys.stderr, "-"*20 + "JOINING READS" + "-"*20
+    logger.debug("-"*20 + "JOINING READS" + "-"*20)
+    logger.debug(cmd)
     # See https://blog.nelhage.com/2010/02/a-very-subtle-bug/ for explanation of "preexec_fn" below
     subprocess.check_output(cmd, preexec_fn=lambda: signal.signal(signal.SIGPIPE, signal.SIG_DFL))
     return [outfile_template.replace("%",middle) for middle in ("un1", "un2", "join")]
@@ -108,8 +114,9 @@ def run_bwaindex(reference_genome):
     # bwa index -p bwa_bug_test/synthetic/syn_concat bwa_bug_test/synthetic/syn_concat.fa 
     index_prefix = os.path.splitext(reference_genome)[0]
     cmd = ("bwa", "index", "-p", index_prefix, reference_genome)
-    print >>sys.stderr, "\n\nINDEXING GENOME"
-    print cmd
+    print >>sys.stderr, "-"*20 + "INDEXING GENOME" + "-"*20
+    logger.debug("-"*20 + "INDEXING GENOME" + "-"*20)
+    logger.debug(cmd)
     subprocess.check_output(cmd)
     return index_prefix
 
@@ -118,8 +125,9 @@ def run_bwamem(genome_index, fastq_list,outfile_root,numthreads=1,minseed=10):
     # bwa mem -t 12 -k 10 synthetic/syn_concat final_fastqs/syn.join.fastq.gz | samtools view -Sb - > bwa/syn.join_TMP
 
     bwa_mem_cmd = ["bwa", "mem", "-t", str(numthreads), "-k", str(minseed), genome_index] + fastq_list
-    print >>sys.stderr, "\n\RUNNING BWA"
-    print bwa_mem_cmd
+    print >>sys.stderr, "-"*20 + "RUNNING BWA" + "-"*20
+    logger.debug("-"*20 + "RUNNING BWA" + "-"*20)
+    logger.debug(bwa_mem_cmd)
     p_bwa_mem = subprocess.Popen(bwa_mem_cmd, stdout=subprocess.PIPE) #,stderr=errhandle)
 
     sam_view_cmd = ["samtools", "view", "-Su", "-"]
@@ -141,16 +149,18 @@ def run_samtools_merge(mergebam, inbam1, inbam2):
     # samtools merge bwa/syn.merge.bam bwa/syn.pair.bam bwa/syn.join.bam
 
     merge_cmd = ["samtools", "merge", "-f", mergebam, inbam1, inbam2]
-    print >>sys.stderr, "\n\MERGING BAMS"
-    print merge_cmd
+    print >>sys.stderr, "-"*20 + "MERGING BAMS" + "-"*20
+    logger.debug("-"*20 + "MERGING BAMS" + "-"*20)
+    logger.debug(merge_cmd)
     subprocess.check_output(merge_cmd)
     return mergebam
 
 def run_samtools_index(inbam):
     # samtools merge bwa/syn.merge.bam bwa/syn.pair.bam bwa/syn.join.bam
     index_cmd = ["samtools", "index", inbam]
-    print >>sys.stderr, "\n\INDEX BAM"
-    print index_cmd
+    print >>sys.stderr, "-"*20 + "INDEXING BAM" + "-"*20
+    logger.debug("-"*20 + "INDEXING BAM" + "-"*20)
+    logger.debug(index_cmd)
     subprocess.check_output(index_cmd)
     return inbam
 

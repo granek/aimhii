@@ -14,28 +14,15 @@ from operator import attrgetter
 from plot_metaclusters import plot_clusters, READ_PITCH, READ_HEIGHT
 import matplotlib
 
+import logging
+logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
+
 # cigar_re = re.compile("(d+)([mM])(d+)[F](d+)[mM]")
 OPPOSITE_STRAND = {"+":"-", "-":"+"}
 OPPOSITE_SIDE = {RIGHT:LEFT, LEFT:RIGHT}
 MINUS = "-";PLUS = "+"
-
-def current_work():
-    todo_list = [
-        "Need to handle indels better (max indel size?)",
-        "Are all outputs base 1!!!!???",
-        "Formalize metacluster output.  Include insert length, insert orientation, and gap length",
-        "Use original read information to get insert strand (normalized to ref on + strand) see ChimeraJunction.__init__",
-        "Fix false singletons (facing wrong direction, should be merged with adjacent cluster pair) :SINGLETON: ref0:9613-10000 LENGTH:387 COUNT:11 INSERT:left 9880, insert:insert0:[1808,2000)/. and SINGLETON: ref0:10004-10430 LENGTH:426 COUNT:16 INSERT:right 10247, insert:insert0:[0,302)/.",
-        "harmonize iv with insertion_point (fix current difference in metacluster output)",
-        "Handle meta clusters where constituent clusters overlap (small deletion)",
-        "Handle SA CIGAR strings with multiple matches - look for Number of matches != 1"
-        ]
-    todo_list.insert(0, "="*80)
-    todo_list.append("="*80)
-    
-    for todo in todo_list:
-        print >> sys.stderr, "*", todo
-        print "*", todo
 
 def main():
     parser = argparse.ArgumentParser(description="Extract all reads in SAM_FILE that map to REF_NAME, or have pair that maps to it (including fusion matches)")
@@ -109,26 +96,25 @@ def run_analysis(mapread_bam, minreads, maxgap, outhandle, insert_seq=None, inse
     # find_chimeric_reads_htseq(args.SAM_FILE.name)
 
     
-    print "CLUSTERING"
+    
+    logger.debug("-"*20 + "CLUSTERING" + "-"*20)
     cluster_list = cluster_junctions(junction_list)
     cluster_list = filter_clusters(cluster_list, minreads)
     cluster_list.sort()
 
     for cluster in cluster_list:
-        print cluster
+        logger.debug(cluster)
 
     for cluster in cluster_list:
-        print "{0.count:<10} {0.range}".format(cluster)
+        logger.debug("{0.count:<10} {0.range}".format(cluster))
 
     for cluster in cluster_list:
-        print "DETAILS", cluster.insert_details
+        logger.debug("DETAILS {0}".format(cluster.insert_details))
 
 
-    print "NEEED TO MAKE VALUES base 1!!!!", "#"*50
     metacluster_list = find_cluster_pairs(cluster_list,maxgap)
-    print "NEEED TO MAKE VALUES base 1!!!!", "#"*50
     for metacluster in metacluster_list:
-        print metacluster.str_with_secondary
+        logger.debug(metacluster.str_with_secondary)
 
     outwriter = csv.writer(outhandle,dialect=csv.excel)
     # print >>sys.stderr, "metacluster_list", metacluster_list
@@ -146,7 +132,7 @@ def find_chimeric_reads(sam_filename):
     # chroms_re = re.compile("("+'|'.join(samfile.references)+")-("+'|'.join(samfile.references)+")")
     
     # for aread in samfile.fetch():
-    print >>sys.stderr, "aread.qname, samfile.getrname(aread.tid), aread.cigarstring, aread.aend, aread.alen, aread.pos, aread.qend, aread.qlen, aread.qstart, tags['SA']"    
+    logger.debug("aread.qname, samfile.getrname(aread.tid), aread.cigarstring, aread.aend, aread.alen, aread.pos, aread.qend, aread.qlen, aread.qstart, tags['SA']")
     for aread in samfile:
         tags = dict(aread.tags)
         if "SA" in tags:
@@ -176,10 +162,10 @@ def find_chimeric_reads(sam_filename):
                     primary_strand = MINUS
                 else:
                     primary_strand = PLUS
-                print "{0.qname:20} r{3} {4}\t{1}:{0.pos}-{0.aend}[{0.alen}]\tQ:{0.qstart}-{0.qend}[{0.qlen}]\t{5}{0.cigarstring:10}\tSA<{2}>".format(aread,rname, sa_list,readnum,line_type,primary_strand)
+                logger.debug("{0.qname:20} r{3} {4}\t{1}:{0.pos}-{0.aend}[{0.alen}]\tQ:{0.qstart}-{0.qend}[{0.qlen}]\t{5}{0.cigarstring:10}\tSA<{2}>".format(aread,rname, sa_list,readnum,line_type,primary_strand))
                 read_parts = ReadFragment.listFromCIGAR(aread.cigarstring, aread.pos, rname, primary_strand)
                 for supline in sa_list:
-                    print supline
+                    logger.debug(supline)
                     rname,pos,sup_strand,CIGAR,mapQ,NM = supline.split(",")
                     pos_b0 = int(pos)-1
                     # if CIGAR.count("M") != 1:
@@ -188,14 +174,14 @@ def find_chimeric_reads(sam_filename):
                     read_parts.extend(ReadFragment.listFromCIGAR(CIGAR, pos_b0, rname, sup_strand))
                 read_parts.sort(key=attrgetter('qstart'))
                 for part in read_parts:
-                    print part
+                    logger.debug(part)
                 for i in range(len(read_parts)-1):
                     cur_junction = ChimeraJunction(read_parts[i],read_parts[i+1],aread.qname)
-                    print cur_junction, cur_junction.readname
+                    logger.debug("{0} {1}".format(cur_junction, cur_junction.readname))
                     junction_list.append(cur_junction)
-                print ""
+                logger.debug("."*10)
             else:
-                print "{0.qname:20} r{3} {4}\t{1}:{0.pos}-{0.aend}[{0.alen}]\tQ:{0.qstart}-{0.qend}[{0.qlen}]\t{0.cigarstring:10}".format(aread,rname, sa_list,readnum,line_type)
+                logger.debug("{0.qname:20} r{3} {4}\t{1}:{0.pos}-{0.aend}[{0.alen}]\tQ:{0.qstart}-{0.qend}[{0.qlen}]\t{0.cigarstring:10}".format(aread,rname, sa_list,readnum,line_type))
     return junction_list
 
 def cluster_junctions(junction_list):
@@ -299,12 +285,12 @@ class ChimeraJunction:
             
         self.insert_point = self.l_frag.junc
 
-        print "l.distal:{0.distal} l.junc:{0.junc} r.junc:{1.junc} r.distal:{1.distal}".format(l_part,r_part)
-        print "l.start:{0.start} l.end:{0.end} r.start:{1.start} r.end:{1.end}".format(l_part,r_part)
+        logger.debug("l.distal:{0.distal} l.junc:{0.junc} r.junc:{1.junc} r.distal:{1.distal}".format(l_part,r_part))
+        logger.debug("l.start:{0.start} l.end:{0.end} r.start:{1.start} r.end:{1.end}".format(l_part,r_part))
 
         self.iv = self.primary_frag
            
-        print "junction: {0.primary_frag.rname}:{0.primary_frag.junc}<->{0.secondary_frag.rname}:{0.secondary_frag.junc} insert_side:{0.insert_side}".format(self)
+        logger.debug("junction: {0.primary_frag.rname}:{0.primary_frag.junc}<->{0.secondary_frag.rname}:{0.secondary_frag.junc} insert_side:{0.insert_side}".format(self))
 
     def __str__(self):
         return "{0.l_frag.chrom}:{0.l_frag.junc}~{0.r_frag.chrom}:{0.r_frag.junc} insert:{0.insert_side}".format(self)
@@ -375,7 +361,7 @@ class ReadFragment(HTSeq.GenomicInterval):
         self.qend = qend
         self.rname = rname
         super(ReadFragment,self).__init__(rname,pos,aend,strand)
-        print "SUPER", super(ReadFragment,self).__str__()
+        logger.debug("SUPER", super(ReadFragment,self).__str__())
 
     def __lt__(self,other):
         # this is important for ordering fragments in find_chimeric_reads()
@@ -392,44 +378,46 @@ class ReadFragment(HTSeq.GenomicInterval):
         elif self.strand != strand:
             raise StandardError, "Incompatible strands: {0} != {1}".format(self.strand, strand)
         else:
-            print "Before extension: {0}".format(self)
+            logger.debug("Before extension: {0}".format(self))
             self.qstart = min(self.qstart,qstart)
             self.qend = max(self.qend,qend)
             new_iv = HTSeq.GenomicInterval(rname,pos,aend,strand)
-            print "new_iv:", new_iv
+            logger.debug("new_iv:", new_iv)
             self.extend_to_include(new_iv)
-            print "After extension: {0}".format(self)
+            logger.debug("After extension: {0}".format(self))
         # raise NotImplementedError
 
     @classmethod
     def listFromCIGAR(cls, cigarstring,position_b0, refname, strand):
         read_parts = []
         if strand == MINUS: # need to reverse the CIGAR
-            print "Reversing CIGAR for minus strand read fragment"
+            logger.debug("Reversing CIGAR for minus strand read fragment")
             cigarstring = "".join(reversed(re.findall("\d+[MIDNSHP=X]", cigarstring)))
 
         op_type_list = []
         for op in HTSeq.parse_cigar(cigarstring, position_b0, refname, strand):
-            print op, op.query_from, op.query_to, op.ref_iv
+            logger.debug(map(str,(op, op.query_from, op.query_to, op.ref_iv)))
             if op.type == "M":
                 if "M" in op_type_list:
                     if len(op_type_list) >=2 and op_type_list[-1] == "D" and op_type_list[-2] == "M":
-                        print "extending (D):", op, op.query_from, op.query_to, op.ref_iv
+                        logger.debug(map(str,("extending (D):", op, op.query_from, op.query_to, op.ref_iv)))
                         read_parts[-1].extend(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand)
                     elif len(op_type_list) >=2 and op_type_list[-1] == "I" and op_type_list[-2] == "M":
-                        print "extending (I):", op, op.query_from, op.query_to, op.ref_iv
+                        logger.debug(map(str,("extending (I):", op, op.query_from, op.query_to, op.ref_iv)))
                         read_parts[-1].extend(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand)
                     else:
-                        print "CIGAR WARNING: Number of matches > 1", cigarstring
+                        logger.debug("CIGAR WARNING: Number of matches > 1: {0}".format(cigarstring))
                 else:
-                    print "appending:", op, op.query_from, op.query_to, op.ref_iv
+                    logger.debug(map(str,("appending:", op, op.query_from, op.query_to, op.ref_iv)))
                     suppl_frag = cls(op.query_from, op.query_to,op.ref_iv.start,op.ref_iv.end,op.ref_iv.chrom,strand)
                     read_parts.append(suppl_frag)
             op_type_list.append(op.type)
         return read_parts
 
 if __name__ == "__main__":
-    current_work()
     main()
-    current_work()
-
+    # logger.debug('debug message')
+    # logger.info('info message')
+    # logger.warn('warn message')
+    # logger.error('error message')
+    # logger.critical('critical message')

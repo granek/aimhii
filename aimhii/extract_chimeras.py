@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 # logger.setLevel(logging.DEBUG)
 logger.setLevel(logging.INFO)
 
+from aimhii.__about__ import (
+    __author__, __copyright__, __email__, __license__, __summary__, __title__,
+    __uri__, __version__)
+
 # cigar_re = re.compile("(d+)([mM])(d+)[F](d+)[mM]")
 OPPOSITE_STRAND = {"+":"-", "-":"+"}
 OPPOSITE_SIDE = {RIGHT:LEFT, LEFT:RIGHT}
@@ -45,8 +49,9 @@ def main():
                         help="Clusters consisting of less than %(metavar)s reads are ignored (default: %(default)s)")
     parser.add_argument("--maxgap", type=int, metavar="GAP_LENGTH", default=5000, 
                         help="Clusters separated by no more than %(metavar)s) bases are considered to be cluster doublets (default: %(default)s)")
-    parser.add_argument("--plot", metavar="PLOT_FILE",
-                        help="Generate plots of metaclusters")
+    parser.add_argument("--plot", metavar="PLOT_FILE_PREFIX",
+                        help="Generate plots of metaclusters.  Plot file names will be prefixed with %(metavar)s")
+    parser.add_argument('-V', '--version', action='version', version="%(prog)s v{0}".format(__version__))
 
     # parser.add_argument("--outdir", metavar="OUTDIR", help="Save output file to %(metavar)s (default is same directory as SAM_FILE)")
     # parser.add_argument("--verbose", help="increase output verbosity",action="store_true",default=False)
@@ -340,7 +345,7 @@ class ChimeraJunction:
         xy = (self.primary_frag.start,i*READ_PITCH)
         width = self.primary_frag.length
         height = READ_HEIGHT
-        print "I am pretending to draw myself xy:{0}, width:{1}, height:{2}".format(xy,width,height)
+        logger.debug("I am pretending to draw myself xy:{0}, width:{1}, height:{2}".format(xy,width,height))
         if self.insert_side == RIGHT:
             rect_color = "green"
         else:

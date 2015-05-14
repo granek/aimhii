@@ -14,6 +14,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from aimhii.__about__ import (
+    __author__, __copyright__, __email__, __license__, __summary__, __title__,
+    __uri__, __version__)
+
 def main():
     parser = argparse.ArgumentParser(description="Extract all reads in SAM_FILE that map to REF_NAME, or have pair that maps to it (including fusion matches)")
     parser.add_argument("REF_GENOME", help="FASTA file containing reference genome that reads will be mapped to.")
@@ -31,7 +35,9 @@ def main():
                         help="Clusters consisting of less than %(metavar)s reads are ignored (default: %(default)s)")
     parser.add_argument("--maxgap", type=int, metavar="GAP_LENGTH", default=5000, 
                         help="Clusters separated by no more than %(metavar)s) bases are considered to be cluster doublets (default: %(default)s)")
-
+    parser.add_argument("--plot", metavar="PLOT_FILE_PREFIX",
+                        help="Generate plots of metaclusters.  Plot file names will be prefixed with %(metavar)s")
+    parser.add_argument('-V', '--version', action='version', version="%(prog)s v{0}".format(__version__))
     
     # parser.add_argument("--insert", type=file, help="The sequence of the inserted DNA fragment.  Used to determine how to organize junctions.")
     # parser.add_argument("REF_NAME", help="Extract all reads w")
@@ -66,7 +72,16 @@ def main():
 
     run_samtools_index(final_bamname)
 
-    extract_chimeras.run_analysis(final_bamname, args.minreads, args.maxgap, args.outfile, args.INSERT_SEQ, insertonly=True)
+    (junction_list,
+     metacluster_list) = extract_chimeras.run_analysis(final_bamname,
+                                                       args.minreads,
+                                                       args.maxgap,
+                                                       args.outfile,
+                                                       args.INSERT_SEQ,
+                                                       insertonly=True)
+    if args.plot:
+        extract_chimeras.plot_clusters(metacluster_list,args.plot)
+
 
 
 def run_fastqmcf(adapter_file, fastq_file_list, outdir):

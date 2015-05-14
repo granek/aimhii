@@ -100,7 +100,7 @@ $(BWA_DIR) :
 # $(RESULTS_DIR)/%_results.csv : $(BWA_DIR) $(H99_GENOME) $(FASTQ_DIR)/%_R1_001.fastq.gz $(FASTQ_DIR)/%_R2_001.fastq.gz 
 $(RESULTS_DIR)/%_results.csv : $(BWA_DIR) $(H99_GENOME) $(FASTQ_DIR)/%_R1.fastq.gz $(FASTQ_DIR)/%_R2.fastq.gz 
 	$(dir_guard)
-	$(AIMHII) --threads $(NUMTHREADS) --outfile $@.tmp -t $(word 1,$^) $(word 2,$^) $(PZPNAT_SEQ) $(ADAPTER_FASTA) $(word 3,$^) $(word 4,$^)
+	$(AIMHII) --threads $(NUMTHREADS) --outfile $@.tmp -t $(word 1,$^) $(word 2,$^) $(PZPNAT_SEQ) $(ADAPTER_FASTA) $(word 3,$^) $(word 4,$^) --plot $(@D)/$*_readplot
 	mv $@.tmp $@
 	cat $@
 
@@ -142,7 +142,7 @@ syn : $(SYN_REFSEQ) $(SYN_INSERTSEQ) $(SYN_MUTSEQ) $(SYNTHETIC_FASTQ_FULLPATH) $
 
 $(SYN_DIR)/%_results.csv : $(BWA_DIR) $(SYN_REFSEQ) $(SYN_DIR)/%_R1.fastq.gz $(SYN_DIR)/%_R2.fastq.gz 
 	$(dir_guard)
-	$(AIMHII) --threads $(NUMTHREADS) --outfile $@.tmp -t $(word 1,$^) $(word 2,$^) $(SYN_INSERTSEQ) $(ADAPTER_FASTA) $(word 3,$^) $(word 4,$^)
+	$(AIMHII) --threads $(NUMTHREADS) --outfile $@.tmp -t $(word 1,$^) $(word 2,$^) $(SYN_INSERTSEQ) $(ADAPTER_FASTA) $(word 3,$^) $(word 4,$^) --plot $(@D)/$*_readplot
 	mv $@.tmp $@
 	cat $@
 

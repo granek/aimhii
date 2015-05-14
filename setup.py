@@ -17,26 +17,30 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst')) as f:
     long_description = f.read()
 
+
+execfile("aimhii/__about__.py")
+
+    
 setup(
-    name='aimhii',
+    name=__title__,
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.5.3',
+    version=__version__,
 
-    description='A pipeline for mapping insertion mutants from whole genome shotgun data',
+    description=__summary__,
     long_description=long_description,
 
     # The project's main homepage.
-    url='http://granek.bitbucket.org/projects/aimhii',
+    url=__uri__,
 
     # Author details
-    author='Josh Granek',
-    author_email='joshua.granek@duke.edu',
+    author=__author__,
+    author_email=__email__,
 
     # Choose your license
-    license='MIT',
+    license=__license__,
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[

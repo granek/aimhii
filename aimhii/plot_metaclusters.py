@@ -6,6 +6,9 @@ from matplotlib.lines import Line2D
 from matplotlib.ticker import FuncFormatter, MaxNLocator
 
 import os
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 READ_HEIGHT = 1
 READ_HEIGHT_INCHES = 0.07
@@ -15,7 +18,7 @@ def plot_clusters(metacluster_list,plotfilename):
 
     plotbase,plotext = os.path.splitext(plotfilename)
     for i, metacluster in enumerate(metacluster_list):
-        print "drawing metacluster:", metacluster
+        logger.info("drawing metacluster: [0]".format(metacluster))
         rect_list,stack_count = metacluster.draw()
         fig = plt.figure(figsize=(8, READ_HEIGHT_INCHES*stack_count+MARGIN))
         ax = plt.axes(frameon=False)

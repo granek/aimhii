@@ -9,6 +9,12 @@ aimhii will run a full analysis starting from sequence data (a FASTQ file), geno
 
 For details see the project website http://granek.bitbucket.org/projects/aimhii/
 
-Changes since v0.5.2: Shifted debugging prints to logging and added scripts for generating synthetic sequences
-Changes since v0.5.1: Lowered pysam version requirement to allow installation using apt-get in Debian v8.
-Changes since v0.5.0: Fixed problem with missing DESCRIPTION.rst.
+
+
+Changes in v0.5.4: Added --plot option to aimhii and shifted a few remaining "prints" to logging
+
+Changes in v0.5.3: Shifted debugging prints to logging and added scripts for generating synthetic sequences
+
+Changes in v0.5.2: Lowered pysam version requirement to allow installation using apt-get in Debian v8.
+
+Changes in v0.5.1: Fixed problem with missing DESCRIPTION.rst.

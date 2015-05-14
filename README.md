@@ -40,7 +40,9 @@ Running `aimhii` from a Docker container requires one step in addition to what y
     2.  Move into that directory with the command `cd my_data`.
     3.  Run the following command where you substitute the names of your files for the capitalized words:
         
-            docker run -v `pwd`:`pwd` -w `pwd` -t granek/aimhii GENOME INSERT ADAPTER FASTQ1 FASTQ2 --outfile results.csv --plot readplot
+            docker run -v `pwd`:`pwd` -w `pwd` -t granek/aimhii aimhii \
+            GENOME INSERT ADAPTER FASTQ1 FASTQ2 \
+            --outfile results.csv --plot readplot
     
     Here are details about the input files to `aimhii`:
     

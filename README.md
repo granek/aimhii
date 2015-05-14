@@ -15,7 +15,7 @@ This is recommended for a standard desktop (Mac or Windows), which is unlikely t
 
 ## Install Docker
 
-1.  See installation instructions for [Mac](https://docs.docker.com/installation/mac/), [Windows](https://docs.docker.com/installation/windows/), [etc](https://docs.docker.com/installation/).
+1.  See installation instructions for [Mac](https://docs.docker.com/installation/mac/), [Windows](https://docs.docker.com/installation/windows/), [etc](https://docs.docker.com/installation/) (we recommend that you use Boot2docker for Mac, and NOT kitematic)
 2.  On Mac and Windows, launch Boot2docker.  All subsequent commands will be run in the terminal launched by Boot2docker.
 3.  `docker pull granek/aimhii` to download aimhii image
 
@@ -30,27 +30,92 @@ Both of these commands will output the results to the current directory.  The "s
 
 ## Analyze your own data
 
-Running `aimhii` from a Docker container requires one step in addition to what you would normally do if it was installed directly on your computer: you have to tell docker where to find the input files, and where to put the results.  If all of the input files are in the current directory, something like the following command will work, saving the results to `results.csv` in the current directory.
+Running `aimhii` from a Docker container requires one step in addition to what you would normally do if it was installed directly on your computer: you have to tell docker where to find the input files, and where to put the results.  This is done with the `--volume` option to docker.  See below for a detailed 1.3.3.
 
-    docker run -v $PWD:/mydir \
-    -t granek/aimhii aimhii \
-    /mydir/genome.fna \
-    /mydir/insert.fasta \
-    /mydir/adapter.fasta \
-    /mydir/R1.fastq.gz \
-    /mydir/R2.fastq.gz \
-    --outfile /mydir/results.csv
+-   Quick start
 
-A similar command will work if the input files are in the current directory, or directories within the current directory.  For example if the FASTQ files are in a subdirectory call `fastq_dir`
+    The simplest way to run aimhii on your own data is:
+    
+    1.  Put all the input files in one directory, for example a directory called `my_data`
+    2.  Move into that directory with the command `cd my_data`.
+    3.  Run the following command where you substitute the names of your files for the capitalized words:
+        
+            docker run -v `pwd`:`pwd` -w `pwd` -t granek/aimhii GENOME INSERT ADAPTER FASTQ1 FASTQ2 --outfile results.csv --plot readplot
+    
+    <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+    
+    
+    <colgroup>
+    <col  class="left" />
+    
+    <col  class="left" />
+    
+    <col  class="left" />
+    </colgroup>
+    <thead>
+    <tr>
+    <th scope="col" class="left">Name</th>
+    <th scope="col" class="left">Description</th>
+    <th scope="col" class="left">Format</th>
+    </tr>
+    </thead>
+    
+    <tbody>
+    <tr>
+    <td class="left">GENOME</td>
+    <td class="left">The reference genome sequence</td>
+    <td class="left">FASTA</td>
+    </tr>
+    
+    
+    <tr>
+    <td class="left">INSERT</td>
+    <td class="left">The sequence of the insert</td>
+    <td class="left">FASTA</td>
+    </tr>
+    
+    
+    <tr>
+    <td class="left">ADAPTER</td>
+    <td class="left">The Illumina adapter sequence (see )</td>
+    <td class="left">FASTA</td>
+    </tr>
+    
+    
+    <tr>
+    <td class="left">FASTQ1</td>
+    <td class="left">The sequencing data (read 1 if paired-end data)</td>
+    <td class="left">FASTQ (can be gzipped)</td>
+    </tr>
+    
+    
+    <tr>
+    <td class="left">FASTQ2</td>
+    <td class="left">The read 2 data file (only if paired-end data)</td>
+    <td class="left">FASTQ (can be gzipped)</td>
+    </tr>
+    </tbody>
+    </table>
+    
+    The `--outfile results.csv` part of the command tells aimhii to save the results table to a file named `results.csv`, in the current directory. 
+    The `--plot readplot` part of the command tells aimhii to generate a read plot for each cluster identified, named with the prefix "readplot", and saved to the current directory.
 
-    docker run -v $PWD:/mydir \
-    -t granek/aimhii aimhii \
-    /mydir/genome.fna \
-    /mydir/insert.fasta \
-    /mydir/adapter.fasta \
-    /mydir/fastq_dir/R1.fastq.gz \
-    /mydir/fastq_dir/R2.fastq.gz \
-    --outfile /mydir/results.csv
+-   Subdirectories
+
+    A similar command will work if the input files are in the current directory, or directories within the current directory.  For example if the FASTQ files are in a subdirectory call `fastq_dir`
+    
+        docker run -v $PWD:/mydir \
+        -t granek/aimhii aimhii \
+        /mydir/genome.fna \
+        /mydir/insert.fasta \
+        /mydir/adapter.fasta \
+        /mydir/fastq_dir/R1.fastq.gz \
+        /mydir/fastq_dir/R2.fastq.gz \
+        --outfile /mydir/results.csv
+
+-   Explanation of &#x2013;volume
+
+    The format is `-v PATH_   If all of the input files are in the current directory, something like the following command will work, saving the results to ~results.csv` in the current directory.
 
 ## Advanced: Access shell in AIMHII docker container
 

@@ -7,6 +7,9 @@ import random
 ## from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
+from aimhii.__about__ import (
+    __author__, __copyright__, __email__, __license__, __summary__, __title__,
+    __uri__, __version__)
 
 def main():
     parser = argparse.ArgumentParser(description="")
@@ -19,7 +22,7 @@ def main():
     parser.add_argument("-n", "--numchroms",type=int,help="Number of chromomsome to mutate",default=1)
     parser.add_argument("-p", "--position",type=int,help="Position in REFSEQ to insert INSERTSEQ",default=-1)
     parser.add_argument("-o", "--output",type=argparse.FileType('w'),default=sys.stdout,metavar="OUTFILE")
-    # parser.add_argument("--format",default="fastq-sanger",help="Output format (default: %(default)s")
+    parser.add_argument('-V', '--version', action='version', version="%(prog)s v{0}".format(__version__))
     args = parser.parse_args()
 
     insert_rec = SeqIO.read(args.INSERTSEQ,"fasta")

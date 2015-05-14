@@ -9,6 +9,12 @@ from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC
+
+from aimhii.__about__ import (
+    __author__, __copyright__, __email__, __license__, __summary__, __title__,
+    __uri__, __version__)
+
+
 BASES = ("A","C", "G", "T")
 # UPPER_BASES = letters.upper().split("")
 HEAD_BASE = "A"
@@ -27,6 +33,7 @@ def main():
     parser.add_argument("--randseed",type=int,metavar="SEED",help="Seed the random number generator with %(metavar)s")
     parser.add_argument("--lower", action='store_true', help="Generate lowercase sequence")
     ## parser.add_argument("--upper", action='store_false', help="Generate uppercase sequence")
+    parser.add_argument('-V', '--version', action='version', version="%(prog)s v{0}".format(__version__))
 
     args = parser.parse_args()
 

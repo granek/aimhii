@@ -42,6 +42,8 @@ Running `aimhii` from a Docker container requires one step in addition to what y
         
             docker run -v `pwd`:`pwd` -w `pwd` -t granek/aimhii GENOME INSERT ADAPTER FASTQ1 FASTQ2 --outfile results.csv --plot readplot
     
+    Here are details about the input files to `aimhii`:
+    
     <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
     
     

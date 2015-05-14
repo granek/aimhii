@@ -43,6 +43,7 @@ Running `aimhii` from a Docker container requires one step in addition to what y
             docker run -v `pwd`:`pwd` -w `pwd` -t granek/aimhii GENOME INSERT ADAPTER FASTQ1 FASTQ2 --outfile results.csv --plot readplot
     
     Here are details about the input files to `aimhii`:
+    
     -   **GENOME:** The reference genome sequence, in FASTA format
     -   **INSERT :** The sequence of the insert, in FASTA format
     -   **ADAPTER:** The Illumina adapter sequence (see ), in FASTA

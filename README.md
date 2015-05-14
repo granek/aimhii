@@ -43,61 +43,11 @@ Running `aimhii` from a Docker container requires one step in addition to what y
             docker run -v `pwd`:`pwd` -w `pwd` -t granek/aimhii GENOME INSERT ADAPTER FASTQ1 FASTQ2 --outfile results.csv --plot readplot
     
     Here are details about the input files to `aimhii`:
-    
-    <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
-    
-    
-    <colgroup>
-    <col  class="left" />
-    
-    <col  class="left" />
-    
-    <col  class="left" />
-    </colgroup>
-    <thead>
-    <tr>
-    <th scope="col" class="left">Name</th>
-    <th scope="col" class="left">Description</th>
-    <th scope="col" class="left">Format</th>
-    </tr>
-    </thead>
-    
-    <tbody>
-    <tr>
-    <td class="left">GENOME</td>
-    <td class="left">The reference genome sequence</td>
-    <td class="left">FASTA</td>
-    </tr>
-    
-    
-    <tr>
-    <td class="left">INSERT</td>
-    <td class="left">The sequence of the insert</td>
-    <td class="left">FASTA</td>
-    </tr>
-    
-    
-    <tr>
-    <td class="left">ADAPTER</td>
-    <td class="left">The Illumina adapter sequence (see )</td>
-    <td class="left">FASTA</td>
-    </tr>
-    
-    
-    <tr>
-    <td class="left">FASTQ1</td>
-    <td class="left">The sequencing data (read 1 if paired-end data)</td>
-    <td class="left">FASTQ (can be gzipped)</td>
-    </tr>
-    
-    
-    <tr>
-    <td class="left">FASTQ2</td>
-    <td class="left">The read 2 data file (only if paired-end data)</td>
-    <td class="left">FASTQ (can be gzipped)</td>
-    </tr>
-    </tbody>
-    </table>
+    -   **GENOME:** The reference genome sequence, in FASTA format
+    -   **INSERT :** The sequence of the insert, in FASTA format
+    -   **ADAPTER:** The Illumina adapter sequence (see ), in FASTA
+    -   **FASTQ1 :** The sequencing data (read 1 if paired-end data), in FASTQ format (can be gzipped)
+    -   **FASTQ2 :** The read 2 data file (only if paired-end data), in FASTQ format (can be gzipped)
     
     The `--outfile results.csv` part of the command tells aimhii to save the results table to a file named `results.csv`, in the current directory. 
     The `--plot readplot` part of the command tells aimhii to generate a read plot for each cluster identified, named with the prefix "readplot", and saved to the current directory.

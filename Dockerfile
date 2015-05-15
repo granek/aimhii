@@ -8,7 +8,7 @@ MAINTAINER Josh Granek <joshua.granek@duke.edu>
 LABEL Description="This image is used to set up a container for running AIM-HII"
 
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
 	make \
 	git \
 	bwa \

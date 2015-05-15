@@ -46,3 +46,5 @@ RUN	cd ~ && \
 RUN 	git clone https://granek@bitbucket.org/granek/aimhii.git
 
 WORKDIR /root/aimhii
+
+ENV PATH $PATH:/usr/lib/samtools

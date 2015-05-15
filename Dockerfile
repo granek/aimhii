@@ -21,8 +21,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	python-matplotlib \
 	libgsl0-dev \
 	wget \
-	curl
-#	python-dev \
+	curl \
+	gcc \
+	g++ \
+	python-dev
 #	python-biopython \
 #	cython \
 

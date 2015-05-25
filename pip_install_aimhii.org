@@ -1,5 +1,5 @@
 * Pip Installation
-This requires that the [[file:~/Documents/BioinfCollabs/AlspaughLab/README.org::*Software%20Dependencies][Software Dependencies]] are already installed, except for the [[file:~/Documents/BioinfCollabs/AlspaughLab/README.org::*Python%20library%20dependencies][Python library dependencies]], which pip will install if missing.
+This requires that the [[README.org::*Software%20Dependencies][Software Dependencies]] are already installed, except for the [[file:~/Documents/BioinfCollabs/AlspaughLab/README.org::*Python%20library%20dependencies][Python library dependencies]], which pip will install if missing.
 This is recommended for a server with common bioinformatics software already installed, which is likely to include these dependencies.
 
 *Note* that in the instructions below, text that has ~this formatting~ should be typed at the command line.

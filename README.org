@@ -20,47 +20,9 @@ There are several different ways to install AIM-HII:
 
 1. [[docker_install_aimhii.org][Docker]]: recommended for a standard desktop
 2. [[pip_install_aimhii.org][Pip]]: recommended for a bioinformatics server
-3. [[Git Repository][Git]]: recommended for pros
+3. [[git_install_aimhii.org][Git]]: recommended for pros
 
-The bioinformatics software that AIM-HII depends on is described in the [[Software Dependencies]] section.
+The bioinformatics software that AIM-HII depends on is described in the  [[software_dependencies.org][Software Dependencies]] section.
 
 Note that in the instructions below, text that has ~this formatting~ should be typed at the command line.
-
-* Git Repository
-This is only recommended for "pros": you are familiar with git and want to explore the source code.  This method requires that the [[Software Dependencies]] are already installed.
-** Download source code repository
-   1. ~git clone https://granek@bitbucket.org/granek/aimhii.git~
-
-At this point there are several options for installing aimhii from the downloaded repository.  In both cases it is recommended to first follow the instructions to [[Setup a Python Virtual Environment]]:
-*** Use pip to install from the downloaded repository (recommended)
-1. ~pip install numpy~ (HTSeq needs numpy installed beforehand)
-2. ~pip install ./aimhii~
-*** Distutils install
-1. ~cd aimhii~
-2. ~python setup.py install~
-** To reproduce the analysis from the manuscript (Optional)
-   1. ~cd aimhii~
-   2. ~make run_subset~ to do a test analysis on a subset of the data. 
-   3. ~make run_aimhii~ to perform the full analysis from the manuscript. 
-* Software Dependencies
-  The versions given below have been tested with this software, and are known to work, but earlier versions may work perfectly well:
-
-  - [[https://code.google.com/p/ea-utils/][ea-utils]] (fastq-mcf and fastq-join)
-  - [[http://bio-bwa.sourceforge.net/][BWA]] (version 0.7.5a-r405)
-  - [[http://samtools.sourceforge.net/][samtools]]
-  - [[https://www.python.org/downloads/release/python-279/][python2.7]]
-  - [[https://pip.pypa.io/en/latest/installing.html][pip]] (already included in python version 2.7.9 and higher)
-** Required to replicate analysis from manuscript, but not to run AIMHII on your own data.
-   - [[http://www.gnu.org/software/make/][gnumake]]
-   - [[http://git-scm.com/downloads][git]]
-   - [[http://www.ncbi.nlm.nih.gov/books/NBK158900/#SRA_download.how_do_i_download_and_insta][SRA Toolkit]] (version 2.3.5)
-   - [[http://curl.haxx.se/][curl]]
-** Python library dependencies
-   All of these packages will be installed by ~pip aimhii~.  They can be installed separately by running ~pip install -r requirements.txt~, using the requirements.txt file included in the repository.
-
-   - biopython
-   - HTSeq
-   - matplotlib
-   - numpy
-   - pysam
 

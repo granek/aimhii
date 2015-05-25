@@ -1,21 +1,22 @@
-The versions given below have been tested with this software, and are known to work, but earlier versions may work perfectly well:
+* Software Dependencies
+  The versions given below have been tested with this software, and are known to work, but earlier versions may work perfectly well:
 
   - [[https://code.google.com/p/ea-utils/][ea-utils]] (fastq-mcf and fastq-join)
   - [[http://bio-bwa.sourceforge.net/][BWA]] (version 0.7.5a-r405)
   - [[http://samtools.sourceforge.net/][samtools]]
   - [[https://www.python.org/downloads/release/python-279/][python2.7]]
   - [[https://pip.pypa.io/en/latest/installing.html][pip]] (already included in python version 2.7.9 and higher)
-* Required to replicate analysis from manuscript, but not to run AIMHII on your own data.
-  - [[http://www.gnu.org/software/make/][gnumake]]
-  - [[http://git-scm.com/downloads][git]]
-  - [[http://www.ncbi.nlm.nih.gov/books/NBK158900/#SRA_download.how_do_i_download_and_insta][SRA Toolkit]] (version 2.3.5)
-  - [[http://curl.haxx.se/][curl]]
-* Python library dependencies
-  All of these packages will be installed by ~pip aimhii~.  They can be installed separately by running ~pip install -r requirements.txt~, using the requirements.txt file included in the repository.
+** Required to replicate analysis from manuscript, but not to run AIMHII on your own data.
+   - [[http://www.gnu.org/software/make/][gnumake]]
+   - [[http://git-scm.com/downloads][git]]
+   - [[http://www.ncbi.nlm.nih.gov/books/NBK158900/#SRA_download.how_do_i_download_and_insta][SRA Toolkit]] (version 2.3.5)
+   - [[http://curl.haxx.se/][curl]]
+** Python library dependencies
+   All of these packages will be installed by ~pip aimhii~.  They can be installed separately by running ~pip install -r requirements.txt~, using the requirements.txt file included in the repository.
 
-  - biopython
-  - HTSeq
-  - matplotlib
-  - numpy
-  - pysam
+   - biopython
+   - HTSeq
+   - matplotlib
+   - numpy
+   - pysam
 

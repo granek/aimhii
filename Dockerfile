@@ -45,7 +45,7 @@ RUN	cd ~ && \
 	cd ~ && \
 	rm -rf ea-utils.1.1.2-806 ea-utils.1.1.2-806.tar.gz
 
-RUN 	git clone https://granek@bitbucket.org/granek/aimhii.git
+RUN 	git clone https://github.com/granek/aimhii.git
 
 WORKDIR /root/aimhii
 

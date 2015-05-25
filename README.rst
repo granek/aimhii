@@ -7,7 +7,7 @@ The package will install two executables: aimhii and extract_chimeras.
 
 aimhii will run a full analysis starting from sequence data (a FASTQ file), genome sequence, and insert sequence.  extract_chimeras just runs the last step of this analysis, assuming you already have a BAM file and a concatenated genome-insert sequence.
 
-For details see the project website http://granek.bitbucket.org/projects/aimhii/
+For details see the project website https://github.com/granek/aimhii/
 
 
 

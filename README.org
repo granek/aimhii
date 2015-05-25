@@ -24,5 +24,7 @@ There are several different ways to install AIM-HII:
 
 The bioinformatics software that AIM-HII depends on is described in the  [[software_dependencies.org][Software Dependencies]] section.
 
-Note that in the instructions below, text that has ~this formatting~ should be typed at the command line.
+For details about the input files to ~aimhii~, and options see [[running_aimhii.org][Running AIMHII]].  There are some differences specific to running from Docker that are discussed in /Quick Start to analyze your own data/ section of the [[docker_install_aimhii.org][Docker Installation Instructions]].
+
+Note that in the instructions, text that has ~this formatting~ should be typed at the command line.
 

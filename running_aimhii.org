@@ -1,5 +1,10 @@
-* Running AIMHII
-The command ~aimhii -h~ will print the "help" information for aimhii, giving details of additional commandline options. Here is an explanation of the input files.
+* Quick Start to analyze your own data: 
+The following command can be used to run aimhii on your data:
+   #+BEGIN_SRC sh
+aimhii GENOME INSERT ADAPTER FASTQ1 FASTQ2 --outfile results.csv --plot readplot
+   #+END_SRC
+
+The required input files are:
 
 - GENOME :: The reference genome sequence, in FASTA format
 - INSERT  :: The sequence of the insert, in FASTA format
@@ -7,9 +12,13 @@ The command ~aimhii -h~ will print the "help" information for aimhii, giving det
 - FASTQ1  :: The sequencing data (read 1 if paired-end data), in FASTQ format (can be gzipped)
 - FASTQ2  :: The read 2 data file (only if paired-end data), in FASTQ format (can be gzipped)
 
+The ~--outfile results.csv~ part of the command tells aimhii to save the results table to a file named ~results.csv~, which will be generated in the current directory (you should NOT create this file).
+The ~--plot readplot~ part of the command tells aimhii to generate a read plot for each cluster identified, named with the prefix "readplot", and saved to the current directory (you should NOT create this file).
+
+The command ~aimhii -h~ will print the "help" information for aimhii, giving details of additional commandline options. Here is an explanation of the input files.
+
 * Adapter Details
 An important step that AIM-HII preforms on the raw data for analysis is to remove contaminating adapter sequence.  This adapter sequence is supplied to AIM-HII in the required *ADAPTER* input file, which must be in FASTA format.  If you know the sequence of the adapter(s) used in preparing your sequencing library, simply put this in a FASTA file.  The [[info/illumina_adapter1.fasta][adapter file]] used in analysis of data for the AIM-Seq manuscript can be used as a model, it contains "TruSeq Adapter, Index 1".
-
 
 If you are running AIM-HII on your own data, but do not know which adapter(s) were used in preparation of your sequencing library, there are ways to figure out:
 ** Ask!

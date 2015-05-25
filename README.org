@@ -1,7 +1,7 @@
 There are several different ways to install AIM-HII:
 
 
-1. [[Docker.org][Docker]]: recommended for a standard desktop
+1. [[docker_install_aimhii.org][Docker]]: recommended for a standard desktop
 2. [[Pip Installation][Pip]]: recommended for a bioinformatics server
 3. [[Git Repository][Git]]: recommended for pros
 

@@ -4,7 +4,8 @@ This is recommended for a server with common bioinformatics software already ins
 
 *Note* that in the instructions below, text that has ~this formatting~ should be typed at the command line.
 
-## It is strongly recommended, but not required to follow the instructions to first [[Setup a Python Virtual Environment]].
+# It is strongly recommended, but not required to follow the instructions to first [[Setup a Python Virtual Environment]].
+
 ** Setup a Python Virtual Environment
 This step is optional, but strongly recommended.
 This assumes you have Python [[https://pypi.python.org/pypi/pip][pip]] and [[https://pypi.python.org/pypi/virtualenv][virtualenv]] installed.  If [[https://pypi.python.org/pypi/virtualenv][virtualenv]] is not installed try the command ~pip install virtualenv~ to install it.  If [[https://pypi.python.org/pypi/pip][pip]] is not installed, you will need to [[https://pip.pypa.io/en/stable/installing.html][install]] it first.

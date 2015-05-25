@@ -1,10 +1,10 @@
 * Pip Installation
-This requires that the [[README.org::*Software%20Dependencies][Software Dependencies]] are already installed, except for the [[file:~/Documents/BioinfCollabs/AlspaughLab/README.org::*Python%20library%20dependencies][Python library dependencies]], which pip will install if missing.
+This requires that the [[software_dependencies.org][Software Dependencies]] are already installed, except for the /Python library dependencies/ which pip will install if missing.
 This is recommended for a server with common bioinformatics software already installed, which is likely to include these dependencies.
 
 *Note* that in the instructions below, text that has ~this formatting~ should be typed at the command line.
 
-It is strongly recommended, but not required to follow the instructions to first [[Setup a Python Virtual Environment]].
+## It is strongly recommended, but not required to follow the instructions to first [[Setup a Python Virtual Environment]].
 ** Setup a Python Virtual Environment
 This step is optional, but strongly recommended.
 This assumes you have Python [[https://pypi.python.org/pypi/pip][pip]] and [[https://pypi.python.org/pypi/virtualenv][virtualenv]] installed.  If [[https://pypi.python.org/pypi/virtualenv][virtualenv]] is not installed try the command ~pip install virtualenv~ to install it.  If [[https://pypi.python.org/pypi/pip][pip]] is not installed, you will need to [[https://pip.pypa.io/en/stable/installing.html][install]] it first.

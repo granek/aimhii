@@ -28,9 +28,9 @@ __all__ = [
 
 __title__ = "aimhii"
 __summary__ = "A pipeline for mapping insertion mutants from whole genome shotgun data"
-__uri__ = "http://granek.bitbucket.org/projects/aimhii/"
+__uri__ = "https://github.com/granek/aimhii/"
 
-__version__ = "0.5.4"
+__version__ = "0.5.5"
 
 __author__ = "Josh Granek"
 __email__ = "joshua.granek@duke.edu"

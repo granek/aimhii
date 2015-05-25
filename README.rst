@@ -11,6 +11,8 @@ For details see the project website https://github.com/granek/aimhii/
 
 
 
+Changes in v0.5.5: Shifted to github
+
 Changes in v0.5.4: Added --plot option to aimhii and shifted a few remaining "prints" to logging
 
 Changes in v0.5.3: Shifted debugging prints to logging and added scripts for generating synthetic sequences

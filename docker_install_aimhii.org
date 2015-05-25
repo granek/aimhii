@@ -47,41 +47,41 @@ The following will print the "help" information for aimhii, giving details of ad
    #+BEGIN_SRC sh
 docker run -t granek/aimhii aimhii -h 
    #+END_SRC
-*** Old example                                                  :noexport:
-   #+BEGIN_SRC sh
-docker run -v $PWD:/mydir \
--t granek/aimhii aimhii \
-/mydir/genome.fna \
-/mydir/insert.fasta \
-/mydir/adapter.fasta \
-/mydir/fastq_dir/R1.fastq.gz \
-/mydir/fastq_dir/R2.fastq.gz \
---outfile /mydir/results.csv
-     #+END_SRC
-*** Explanation of --volume                                      :noexport:
-The format is ~-v PATH_   If all of the input files are in the current directory, something like the following command will work, saving the results to ~results.csv~ in the current directory.
+# *** Old example                                                  :noexport:
+#    #+BEGIN_SRC sh
+# docker run -v $PWD:/mydir \
+# -t granek/aimhii aimhii \
+# /mydir/genome.fna \
+# /mydir/insert.fasta \
+# /mydir/adapter.fasta \
+# /mydir/fastq_dir/R1.fastq.gz \
+# /mydir/fastq_dir/R2.fastq.gz \
+# --outfile /mydir/results.csv
+#      #+END_SRC
+# *** Explanation of --volume                                      :noexport:
+# The format is ~-v PATH_   If all of the input files are in the current directory, something like the following command will work, saving the results to ~results.csv~ in the current directory.
 ** Advanced: Access shell in AIMHII docker container
 You can use the following command to start a shell within the aimhii container.
    #+BEGIN_SRC sh
    docker run -i -t granek/aimhii /bin/bash
    #+END_SRC
-** aimhii call structure					   :noexport:
-   REF_GENOME            FASTA file containing reference genome that reads will be mapped to.
-   INSERT_SEQ            FASTA file containing the sequence of the insertion DNA fragment.
-   ADAPTER_FILE          FASTA file containing sequences of adapters to be removed from reads.
-   FASTQ_FILE            One file for single-end, two for paired end. Files may be gzipped.
-   --outfile OUTFILE
-** TODO Cleaning up                                               :noexport:
-1. removing Docker images and containers
-2. shutting down boot2docker
-** Full paths							   :noexport:
-   #+BEGIN_SRC sh
-josh$ docker run \
--v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/genome/GCF_000149245.1_CNA3_genomic.fna:/test/genome \
--v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/info/pPZP-NATcc.fasta:/test/insert \
--v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/info/illumina_adapter1.fasta:/test/adapter \
--v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/raw_fastqs/subset_SRR1964709_R1.fastq.gz:/test/fastq1.gz \
--v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/raw_fastqs/subset_SRR1964709_R2.fastq.gz:/test/fastq2.gz \
--v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/output.csv:/test/output \
--t granek/aimhii head /test/genome
-     #+END_SRC
+# ** aimhii call structure					   :noexport:
+#    REF_GENOME            FASTA file containing reference genome that reads will be mapped to.
+#    INSERT_SEQ            FASTA file containing the sequence of the insertion DNA fragment.
+#    ADAPTER_FILE          FASTA file containing sequences of adapters to be removed from reads.
+#    FASTQ_FILE            One file for single-end, two for paired end. Files may be gzipped.
+#    --outfile OUTFILE
+# ** TODO Cleaning up                                               :noexport:
+# 1. removing Docker images and containers
+# 2. shutting down boot2docker
+# ** Full paths							   :noexport:
+#    #+BEGIN_SRC sh
+# josh$ docker run \
+# -v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/genome/GCF_000149245.1_CNA3_genomic.fna:/test/genome \
+# -v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/info/pPZP-NATcc.fasta:/test/insert \
+# -v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/info/illumina_adapter1.fasta:/test/adapter \
+# -v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/raw_fastqs/subset_SRR1964709_R1.fastq.gz:/test/fastq1.gz \
+# -v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/raw_fastqs/subset_SRR1964709_R2.fastq.gz:/test/fastq2.gz \
+# -v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/output.csv:/test/output \
+# -t granek/aimhii head /test/genome
+#      #+END_SRC

@@ -1,14 +1,17 @@
 * DONE Docker Installation
-This is recommended for a standard desktop (Mac or Windows), which is unlikely to have required bioinformatic software installed.  
+This is recommended for a standard desktop (Mac or Windows), which is unlikely to have required bioinformatic software installed.
+
+Note that in the instructions below, text that has ~this formatting~ should be typed at the command line.
+
 ** Install Docker
    1. See installation instructions for [[https://docs.docker.com/installation/mac/][Mac]], [[https://docs.docker.com/installation/windows/][Windows]], [[https://docs.docker.com/installation/][etc]] (we recommend that you use Boot2docker for Mac, and NOT kitematic)
    2. On Mac and Windows, launch Boot2docker.  All subsequent commands will be run in the terminal launched by Boot2docker.
    3. ~docker pull granek/aimhii~ to download aimhii image
 
    *Notes:* On other operating systems, the docker daemon may run automatically after installation.  Also, on other operating systems, you may need to use the command ~sudo docker~ instead of just ~docker~.
-*** To start Docker daemon from the shell on a Mac               :noexport:
-    1. ~boot2docker start~ start docker daemon
-    2. ~eval "$(boot2docker shellinit)"~ 
+# *** To start Docker daemon from the shell on a Mac               :noexport:
+#     1. ~boot2docker start~ start docker daemon
+#     2. ~eval "$(boot2docker shellinit)"~ 
 ** Run analysis from manuscript
    Both of these commands will output the results to the current directory.  The "subset" results are named ~subset_SRR1964709_results.csv~, the "full" results are named ~SRR1964709_results.csv~.   An error such as "Are you trying to connect to a TLS-enabled daemon without TLS?", may indicate that docker has not been started.
    

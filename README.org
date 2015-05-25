@@ -1,117 +1,31 @@
+:CONFIG:
+#+TODO: TODO WORKING DRAFT | DONE
+#+DRAWERS: HIDDEN PROPERTIES STATE NOTES CONFIG
+#+STARTUP: indent showall
+#+TAGS:noexport(n)
+#+OPTIONS: H:2
+#+OPTIONS: toc:nil
+#+OPTIONS: num:nil
+#+OPTIONS: skip:nil
+#+OPTIONS: todo:nil
+#+OPTIONS: author:t
+#+OPTIONS: dated:nil 
+#+OPTIONS: tags:nil
+#+OPTIONS: ^:nil
+#+TITLE:AIM-HII
+:END:
+
 There are several different ways to install AIM-HII:
 
 
 1. [[docker_install_aimhii.org][Docker]]: recommended for a standard desktop
-2. [[Pip Installation][Pip]]: recommended for a bioinformatics server
+2. [[pip_install_aimhii.org][Pip]]: recommended for a bioinformatics server
 3. [[Git Repository][Git]]: recommended for pros
 
 The bioinformatics software that AIM-HII depends on is described in the [[Software Dependencies]] section.
 
 Note that in the instructions below, text that has ~this formatting~ should be typed at the command line.
-* DONE Docker Installation
-This is recommended for a standard desktop (Mac or Windows), which is unlikely to have required bioinformatic software installed.  
-** Install Docker
-   1. See installation instructions for [[https://docs.docker.com/installation/mac/][Mac]], [[https://docs.docker.com/installation/windows/][Windows]], [[https://docs.docker.com/installation/][etc]] (we recommend that you use Boot2docker for Mac, and NOT kitematic)
-   2. On Mac and Windows, launch Boot2docker.  All subsequent commands will be run in the terminal launched by Boot2docker.
-   3. ~docker pull granek/aimhii~ to download aimhii image
 
-   *Notes:* On other operating systems, the docker daemon may run automatically after installation.  Also, on other operating systems, you may need to use the command ~sudo docker~ instead of just ~docker~.
-*** To start Docker daemon from the shell on a Mac               :noexport:
-    1. ~boot2docker start~ start docker daemon
-    2. ~eval "$(boot2docker shellinit)"~ 
-** Run analysis from manuscript
-   Both of these commands will output the results to the current directory.  The "subset" results are named ~subset_SRR1964709_results.csv~, the "full" results are named ~SRR1964709_results.csv~.   An error such as "Are you trying to connect to a TLS-enabled daemon without TLS?", may indicate that docker has not been started.
-   
-   - ~docker run -v $PWD:/root/aimhii/results -t granek/aimhii make run_subset~ to do a test analysis on a subset of the data
-   - ~docker run -v $PWD:/root/aimhii/results -t granek/aimhii make run_aimhii~ to perform the full analysis from the manuscript.
-** Quick Start to analyze your own data: 
-Running ~aimhii~ from a Docker container requires one step in addition to what you would normally do if it was installed directly on your computer: you have to tell docker where to find the input files, and where to put the results.  This is done with the "-v" option to ~docker run~.  See the below, or the [[https://docs.docker.com/reference/commandline/cli/#run][Docker documentation]] for details on the "-v".
-
-The simplest way to run aimhii on your own data is:
-
-1. Put all the input files in one directory, for example a directory called ~my_data~
-2. Move into that directory with the command ~cd my_data~.
-3. Run the following command where you substitute the names of your files for the capitalized words:
-   #+BEGIN_SRC sh
-docker run -v `pwd`:`pwd` -w `pwd` -t granek/aimhii aimhii \
-GENOME INSERT ADAPTER FASTQ1 FASTQ2 \
---outfile results.csv --plot readplot
-   #+END_SRC
-
-Here are details about the input files to ~aimhii~:
-
-- GENOME :: The reference genome sequence, in FASTA format
-- INSERT  :: The sequence of the insert, in FASTA format
-- ADAPTER :: The Illumina adapter sequence (see [[Adapter Details]]), in FASTA
-- FASTQ1  :: The sequencing data (read 1 if paired-end data), in FASTQ format (can be gzipped)
-- FASTQ2  :: The read 2 data file (only if paired-end data), in FASTQ format (can be gzipped)
-
-The ~--outfile results.csv~ part of the command tells aimhii to save the results table to a file named ~results.csv~, which will be generated in the current directory (you should NOT create this file).
-The ~--plot readplot~ part of the command tells aimhii to generate a read plot for each cluster identified, named with the prefix "readplot", and saved to the current directory.
-*** Subdirectories
-If some of the input files are in a directory within the current directory, then you only need to modify the above command by giving the relative path.  For example, if your fastq file named "reads.fastq.gz" is in the "data" subdirectory within the current directory, you will need to refer to it as ~data/reads.fastq.gz~ in the ~docker run~ command.
-
-   A similar command will work if the input files are in the current directory, or directories within the current directory.  For example if the FASTQ files are in a subdirectory named ~fastq_dir~
-*** aimhii help
-The following will print the "help" information for aimhii, giving details of additional commandline options.
-   #+BEGIN_SRC sh
-docker run -t granek/aimhii aimhii -h 
-   #+END_SRC
-*** Old example                                                  :noexport:
-   #+BEGIN_SRC sh
-docker run -v $PWD:/mydir \
--t granek/aimhii aimhii \
-/mydir/genome.fna \
-/mydir/insert.fasta \
-/mydir/adapter.fasta \
-/mydir/fastq_dir/R1.fastq.gz \
-/mydir/fastq_dir/R2.fastq.gz \
---outfile /mydir/results.csv
-     #+END_SRC
-*** Explanation of --volume                                      :noexport:
-The format is ~-v PATH_   If all of the input files are in the current directory, something like the following command will work, saving the results to ~results.csv~ in the current directory.
-** Advanced: Access shell in AIMHII docker container
-You can use the following command to start a shell within the aimhii container.
-   #+BEGIN_SRC sh
-   docker run -i -t granek/aimhii /bin/bash
-   #+END_SRC
-** aimhii call structure					   :noexport:
-   REF_GENOME            FASTA file containing reference genome that reads will be mapped to.
-   INSERT_SEQ            FASTA file containing the sequence of the insertion DNA fragment.
-   ADAPTER_FILE          FASTA file containing sequences of adapters to be removed from reads.
-   FASTQ_FILE            One file for single-end, two for paired end. Files may be gzipped.
-   --outfile OUTFILE
-** TODO Cleaning up                                               :noexport:
-1. removing Docker images and containers
-2. shutting down boot2docker
-** Full paths							   :noexport:
-   #+BEGIN_SRC sh
-josh$ docker run \
--v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/genome/GCF_000149245.1_CNA3_genomic.fna:/test/genome \
--v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/info/pPZP-NATcc.fasta:/test/insert \
--v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/info/illumina_adapter1.fasta:/test/adapter \
--v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/raw_fastqs/subset_SRR1964709_R1.fastq.gz:/test/fastq1.gz \
--v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/raw_fastqs/subset_SRR1964709_R2.fastq.gz:/test/fastq2.gz \
--v /Users/josh/Documents/BioinfCollabs/AlspaughLab/docker/testing_docker_volumes/aimhii/output.csv:/test/output \
--t granek/aimhii head /test/genome
-     #+END_SRC
-* Pip Installation
-This is recommended for a server with common bioinformatics software already installed.
-This requires that the [[Software Dependencies]] are already installed.  It is strongly recommended, but not required to follow the instructions to first [[Setup a Python Virtual Environment]].
-** Setup a Python Virtual Environment
-This step is optional, but strongly recommended.
-This assumes you have Python [[https://pypi.python.org/pypi/pip][pip]] and [[https://pypi.python.org/pypi/virtualenv][virtualenv]] installed.  If [[https://pypi.python.org/pypi/virtualenv][virtualenv]] is not installed try the command ~pip install virtualenv~ to install it.  If [[https://pypi.python.org/pypi/pip][pip]] is not installed, you will need to [[https://pip.pypa.io/en/stable/installing.html][install]] it first.
-   
-   1. ~virtualenv aimhii_venv~ to set up a virtual environment (see [[http://docs.python-guide.org/en/latest/dev/virtualenvs/][virtualenv guide]] for details).  *Note:* If the default version of python on your system is older than 2.7, you might need to specify the path to python2.7, for example: ~virtualenv -p /usr/local/bin/python2.7 aimhii_venv~
-   2. ~source aimhii_venv/bin/activate~ to enter the virtual environment.  Use the command ~deactivate~ to leave virtual environment.
-** Use pip to install AIMHII
-   1. ~pip install numpy~ (HTSeq needs numpy installed beforehand)
-   2. ~pip install aimhii~
-** To reproduce the analysis from the manuscript (Optional)
-   1. ~git clone https://granek@bitbucket.org/granek/aimhii.git~
-   2. ~cd aimhii~
-   3. ~make run_subset~ to do a test analysis on a subset of the data. 
-   4. ~make run_aimhii~ to perform the full analysis from the manuscript. 
 * Git Repository
 This is only recommended for "pros": you are familiar with git and want to explore the source code.  This method requires that the [[Software Dependencies]] are already installed.
 ** Download source code repository
@@ -136,12 +50,12 @@ At this point there are several options for installing aimhii from the downloade
   - [[http://samtools.sourceforge.net/][samtools]]
   - [[https://www.python.org/downloads/release/python-279/][python2.7]]
   - [[https://pip.pypa.io/en/latest/installing.html][pip]] (already included in python version 2.7.9 and higher)
-** Only required to replicate analysis from manuscript
+** Required to replicate analysis from manuscript, but not to run AIMHII on your own data.
    - [[http://www.gnu.org/software/make/][gnumake]]
    - [[http://git-scm.com/downloads][git]]
    - [[http://www.ncbi.nlm.nih.gov/books/NBK158900/#SRA_download.how_do_i_download_and_insta][SRA Toolkit]] (version 2.3.5)
    - [[http://curl.haxx.se/][curl]]
-** Python libraries
+** Python library dependencies
    All of these packages will be installed by ~pip aimhii~.  They can be installed separately by running ~pip install -r requirements.txt~, using the requirements.txt file included in the repository.
 
    - biopython
@@ -149,22 +63,4 @@ At this point there are several options for installing aimhii from the downloade
    - matplotlib
    - numpy
    - pysam
-* Test                                                             :noexport:
-[[file:docker_install.html][test linking]]
-* ORGMODE HEADER STUFF                                             :noexport:
-:CONFIG:
-#+TODO: TODO WORKING DRAFT | DONE
-#+DRAWERS: HIDDEN PROPERTIES STATE NOTES CONFIG
-#+STARTUP: indent showall
-#+TAGS:noexport(n)
-#+OPTIONS: H:2
-#+OPTIONS: toc:nil
-#+OPTIONS: num:nil
-#+OPTIONS: skip:nil
-#+OPTIONS: todo:nil
-#+OPTIONS: author:t
-#+OPTIONS: dated:nil 
-#+OPTIONS: tags:nil
-#+OPTIONS: ^:nil
-#+TITLE:AIM-HII
-:END:
+

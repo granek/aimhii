@@ -1,0 +1,22 @@
+* Running AIMHII
+The command ~aimhii -h~ will print the "help" information for aimhii, giving details of additional commandline options. Here is an explanation of the input files.
+
+- GENOME :: The reference genome sequence, in FASTA format
+- INSERT  :: The sequence of the insert, in FASTA format
+- ADAPTER :: The Illumina adapter sequence, in FASTA (see /Adapter Details/ below for more information)
+- FASTQ1  :: The sequencing data (read 1 if paired-end data), in FASTQ format (can be gzipped)
+- FASTQ2  :: The read 2 data file (only if paired-end data), in FASTQ format (can be gzipped)
+
+* Adapter Details
+An important step that AIM-HII preforms on the raw data for analysis is to remove contaminating adapter sequence.  This adapter sequence is supplied to AIM-HII in the required *ADAPTER* input file, which must be in FASTA format.  If you know the sequence of the adapter(s) used in preparing your sequencing library, simply put this in a FASTA file.  The [[info/illumina_adapter1.fasta][adapter file]] used in analysis of data for the AIM-Seq manuscript can be used as a model, it contains "TruSeq Adapter, Index 1".
+
+
+If you are running AIM-HII on your own data, but do not know which adapter(s) were used in preparation of your sequencing library, there are ways to figure out:
+** Ask!
+The easiest approach is to ask whoever prepared the library.  
+** Look at the FASTQ file
+You may be able to determine which adapter was used directly from the FASTQ file.  In FASTQ files produced by Illumina machines, the header of each read includes either the index sequence (HiSeq data) or index number (MiSeq data).  See the [[http://en.wikipedia.org/wiki/FASTQ_format#Illumina_sequence_identifiers][FASTQ format Wikipedia Page]] for details on how to decipher these headers.  Once you have identified the index, you can find the full sequence for the corresponding adapter in this [[http://supportres.illumina.com/documents/documentation/chemistry_documentation/experiment-design/illumina-customer-sequence-letter.pdf][Illumina Adapter Sequence Information]] document.
+** Include every adapter
+If you are unable to determine which adapters were used in preparing your sequencing library, you might opt to include multiple adapters from the
+[[http://supportres.illumina.com/documents/documentation/chemistry_documentation/experiment-design/illumina-customer-sequence-letter.pdf][Illumina Adapter Sequence Information]].  It is unlikely to create problems if you include *extra* adapters, although it will be to increase the time it takes for AIM-HII to run.
+

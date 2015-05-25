@@ -31,16 +31,10 @@ GENOME INSERT ADAPTER FASTQ1 FASTQ2 \
 --outfile results.csv --plot readplot
    #+END_SRC
 
-Here are details about the input files to ~aimhii~:
-
-- GENOME :: The reference genome sequence, in FASTA format
-- INSERT  :: The sequence of the insert, in FASTA format
-- ADAPTER :: The Illumina adapter sequence (see [[Adapter Details]]), in FASTA
-- FASTQ1  :: The sequencing data (read 1 if paired-end data), in FASTQ format (can be gzipped)
-- FASTQ2  :: The read 2 data file (only if paired-end data), in FASTQ format (can be gzipped)
+For details about the input files to ~aimhii~, and options see [[running_aimhii.org][Running AIMHII]].
 
 The ~--outfile results.csv~ part of the command tells aimhii to save the results table to a file named ~results.csv~, which will be generated in the current directory (you should NOT create this file).
-The ~--plot readplot~ part of the command tells aimhii to generate a read plot for each cluster identified, named with the prefix "readplot", and saved to the current directory.
+The ~--plot readplot~ part of the command tells aimhii to generate a read plot for each cluster identified, named with the prefix "readplot", and saved to the current directory (you should NOT create this file).
 *** Subdirectories
 If some of the input files are in a directory within the current directory, then you only need to modify the above command by giving the relative path.  For example, if your fastq file named "reads.fastq.gz" is in the "data" subdirectory within the current directory, you will need to refer to it as ~data/reads.fastq.gz~ in the ~docker run~ command.
 

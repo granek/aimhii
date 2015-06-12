@@ -15,8 +15,8 @@ Note that in the instructions below, text that has ~this formatting~ should be t
 ** Run analysis from manuscript
    Both of these commands will output the results to the current directory.  The "subset" results are named ~subset_SRR1964709_results.csv~, the "full" results are named ~SRR1964709_results.csv~.   An error such as "Are you trying to connect to a TLS-enabled daemon without TLS?", may indicate that docker has not been started.
    
-   - ~docker run -v $PWD:/root/aimhii/results -t granek/aimhii make run_subset~ to do a test analysis on a subset of the data
-   - ~docker run -v $PWD:/root/aimhii/results -t granek/aimhii make run_aimhii~ to perform the full analysis from the manuscript.
+   - ~docker run -v $PWD:/root/aimhii/example_analysis/results -t granek/aimhii make run_subset~ to do a test analysis on a subset of the data
+   - ~docker run -v $PWD:/root/aimhii/example_analysis/results -t granek/aimhii make run_aimhii~ to perform the full analysis from the manuscript.
 ** Quick Start to analyze your own data: 
 Running ~aimhii~ from a Docker container requires one step in addition to what you would normally do if it was installed directly on your computer: you have to tell docker where to find the input files, and where to put the results.  This is done with the "-v" option to ~docker run~.  See the below, or the [[https://docs.docker.com/reference/commandline/cli/#run][Docker documentation]] for details on the "-v".
 

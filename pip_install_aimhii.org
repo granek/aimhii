@@ -17,6 +17,6 @@ This assumes you have Python [[https://pypi.python.org/pypi/pip][pip]] and [[htt
    2. ~pip install aimhii~
 ** To reproduce the analysis from the manuscript (Optional)
    1. ~git clone https://github.com/granek/aimhii.git~
-   2. ~cd aimhii~
+   2. ~cd aimhii/example_analysis~
    3. ~make run_subset~ to do a test analysis on a subset of the data. 
    4. ~make run_aimhii~ to perform the full analysis from the manuscript. 

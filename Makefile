@@ -1,1 +1,0 @@
-aimhii/run_aimhii.mk

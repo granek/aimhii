@@ -11,6 +11,6 @@ At this point there are several options for installing aimhii from the downloade
 1. ~cd aimhii~
 2. ~python setup.py install~
 ** To reproduce the analysis from the manuscript (Optional)
-   1. ~cd aimhii~
+   1. ~cd aimhii/example_analysis~
    2. ~make run_subset~ to do a test analysis on a subset of the data. 
    3. ~make run_aimhii~ to perform the full analysis from the manuscript. 

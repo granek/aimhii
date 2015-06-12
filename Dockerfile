@@ -47,6 +47,6 @@ RUN	cd ~ && \
 
 RUN 	git clone https://github.com/granek/aimhii.git
 
-WORKDIR /root/aimhii
+WORKDIR /root/aimhii/example_analysis
 
 ENV PATH $PATH:/usr/lib/samtools

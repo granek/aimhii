@@ -4,7 +4,7 @@ This is only recommended for "pros": you are familiar with git and want to explo
    1. ~git clone https://github.com/granek/aimhii.git~
 
 At this point there are several options for installing aimhii from the downloaded repository.  In both cases it is recommended to first follow the instructions to /Setup a Python Virtual Environment/ in the  [[pip_install_aimhii.org][Pip Installation]] section:
-*** Use pip to install from the downloaded repository (Recommended)
+*** Use pip to install from the git repository (Recommended)
 1. ~pip install numpy~ (HTSeq needs numpy installed beforehand)
 2. ~pip install ./aimhii~
 *** Distutils install

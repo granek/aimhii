@@ -9,6 +9,9 @@ import sys
 import signal
 import fileinput
 import extract_chimeras
+import filter_bam
+import pysam
+
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -139,21 +142,59 @@ def run_bwamem(genome_index, fastq_list,outfile_root,numthreads=1,minseed=10):
     # bwa mem -t 12 -k 10 synthetic/syn_concat final_fastqs/syn.un1.fastq.gz final_fastqs/syn.un2.fastq.gz | samtools view -Sb - > bwa/syn.pair_TMP
     # bwa mem -t 12 -k 10 synthetic/syn_concat final_fastqs/syn.join.fastq.gz | samtools view -Sb - > bwa/syn.join_TMP
 
+
+    print >>sys.stderr, "Got HERE 1"
+    #----------------------------------------
+    # Create a named pipe
+    bwa_out_pipe = outfile_root+"_bwa_pipe"
+    if os.path.exists(bwa_out_pipe):
+        os.remove(bwa_out_pipe)
+    os.mkfifo(bwa_out_pipe)
+    atexit.register(os.remove, bwa_out_pipe)
+
+    # bwa_out = os.open(bwa_out_pipe ,os.O_WRONLY)
+    #----------------------------------------
     bwa_mem_cmd = ["bwa", "mem", "-t", str(numthreads), "-k", str(minseed), genome_index] + fastq_list
     print >>sys.stderr, "-"*20 + "RUNNING BWA" + "-"*20
     logger.debug("-"*20 + "RUNNING BWA" + "-"*20)
     logger.debug(bwa_mem_cmd)
-    p_bwa_mem = subprocess.Popen(bwa_mem_cmd, stdout=subprocess.PIPE) #,stderr=errhandle)
+    # p_bwa_mem = subprocess.Popen(bwa_mem_cmd, stdout=subprocess.PIPE) #,stderr=errhandle)
+    p_bwa_mem = subprocess.Popen(" ".join(bwa_mem_cmd) + " > {0}".format(bwa_out_pipe),
+                                 shell = True)
+    # p_bwa_mem = subprocess.Popen(bwa_mem_cmd,
+    #                              stdout=bwa_out,
+    #                              close_fds=True,
+    #                              preexec_fn=os.setsid)
+    print >>sys.stderr, "Got HERE 2"
+    #----------------------------------------
+    # Create a named pipe
+    print >>sys.stderr, "Got HERE 3"
+    filter_out = outfile_root+".filter.unsrt.bam"
+    # print >>sys.stderr, "Got HERE 4"
+    # os.mkfifo(filter_out_pipe)
+    # print >>sys.stderr, "Got HERE 5"
+    #----------------------------------------
+    print >>sys.stderr, "Got HERE 6"
+    # filter_bam.filter_chimeric_reads(bwa_out_pipe,filter_out_pipe)
+    filter_bam.filter_chimeric_reads(bwa_out_pipe,filter_out)
+    print >>sys.stderr, "Got HERE 7"
+    # pysam.sort(filter_out,outfile_root)
+    # pysam.sort(filter_out_pipe,outfile_root)
+    print >>sys.stderr, "Got HERE 8"
+    #----------------------------------------
+    # sam_view_cmd = ["samtools", "view", "-Su", "-"]
+    # p_sam_view = subprocess.Popen(sam_view_cmd, stdin=p_bwa_mem.stdout, stdout=subprocess.PIPE) #,stderr=errhandle)
 
-    sam_view_cmd = ["samtools", "view", "-Su", "-"]
-    p_sam_view = subprocess.Popen(sam_view_cmd, stdin=p_bwa_mem.stdout, stdout=subprocess.PIPE) #,stderr=errhandle)
+    # sam_sort_cmd = ["samtools", "sort", "-",outfile_root]
+    sam_sort_cmd = ["samtools", "sort", filter_out,outfile_root]
+    # p_sam_sort = subprocess.Popen(sam_sort_cmd, stdin=p_sam_view.stdout) #,stderr=errhandle)
+    p_sam_sort = subprocess.Popen(sam_sort_cmd) #,stderr=errhandle)
+    print >>sys.stderr, "Got HERE 9"
 
-    sam_sort_cmd = ["samtools", "sort", "-",outfile_root]
-    p_sam_sort = subprocess.Popen(sam_sort_cmd, stdin=p_sam_view.stdout) #,stderr=errhandle)
-
-    p_bwa_mem.stdout.close()
-    p_sam_view.stdout.close()
-    p_sam_sort.communicate()[0]
+    # p_bwa_mem.stdout.close()
+    # p_sam_view.stdout.close()
+    # p_sam_sort.communicate()[0]
+    # os.remove(bwa_out_pipe)
     return outfile_root+".bam"
 
 ##--------------------------------

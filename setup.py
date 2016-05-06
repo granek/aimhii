@@ -79,7 +79,7 @@ setup(
         'numpy>=1.8.1',
         'biopython>=1.64',
         'matplotlib>=1.3.1',
-        'pysam>=0.7.7',
+        'pysam>=0.9.0',
         'HTSeq>=0.6.1'
         ],
 

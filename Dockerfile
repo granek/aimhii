@@ -15,7 +15,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	samtools \
 	python-pip \
 	python-numpy \
-	python-pysam \
 	zlib1g-dev \
 	sra-toolkit \
 	python-matplotlib \
@@ -27,10 +26,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	python-dev
 #	python-biopython \
 #	cython \
+#	python-pysam \
 
 # RUN apt-get install -y curl python-pysam
 
 # RUN pip install numpy
+RUN pip install pysam
 RUN pip install aimhii
 
 WORKDIR /root/

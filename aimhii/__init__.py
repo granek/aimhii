@@ -141,9 +141,6 @@ def run_bwaindex(reference_genome):
 def run_bwamem(genome_index, fastq_list,outfile_root,numthreads=1,minseed=10):
     # bwa mem -t 12 -k 10 synthetic/syn_concat final_fastqs/syn.un1.fastq.gz final_fastqs/syn.un2.fastq.gz | samtools view -Sb - > bwa/syn.pair_TMP
     # bwa mem -t 12 -k 10 synthetic/syn_concat final_fastqs/syn.join.fastq.gz | samtools view -Sb - > bwa/syn.join_TMP
-
-
-    print >>sys.stderr, "Got HERE 1"
     #----------------------------------------
     # Create a named pipe
     bwa_out_pipe = outfile_root+"_bwa_pipe"
@@ -151,50 +148,20 @@ def run_bwamem(genome_index, fastq_list,outfile_root,numthreads=1,minseed=10):
         os.remove(bwa_out_pipe)
     os.mkfifo(bwa_out_pipe)
     atexit.register(os.remove, bwa_out_pipe)
-
-    # bwa_out = os.open(bwa_out_pipe ,os.O_WRONLY)
     #----------------------------------------
     bwa_mem_cmd = ["bwa", "mem", "-t", str(numthreads), "-k", str(minseed), genome_index] + fastq_list
     print >>sys.stderr, "-"*20 + "RUNNING BWA" + "-"*20
     logger.debug("-"*20 + "RUNNING BWA" + "-"*20)
     logger.debug(bwa_mem_cmd)
-    # p_bwa_mem = subprocess.Popen(bwa_mem_cmd, stdout=subprocess.PIPE) #,stderr=errhandle)
     p_bwa_mem = subprocess.Popen(" ".join(bwa_mem_cmd) + " > {0}".format(bwa_out_pipe),
                                  shell = True)
-    # p_bwa_mem = subprocess.Popen(bwa_mem_cmd,
-    #                              stdout=bwa_out,
-    #                              close_fds=True,
-    #                              preexec_fn=os.setsid)
-    print >>sys.stderr, "Got HERE 2"
     #----------------------------------------
-    # Create a named pipe
-    print >>sys.stderr, "Got HERE 3"
     filter_out = outfile_root+".filter.unsrt.bam"
-    # print >>sys.stderr, "Got HERE 4"
-    # os.mkfifo(filter_out_pipe)
-    # print >>sys.stderr, "Got HERE 5"
-    #----------------------------------------
-    print >>sys.stderr, "Got HERE 6"
-    # filter_bam.filter_chimeric_reads(bwa_out_pipe,filter_out_pipe)
     filter_bam.filter_chimeric_reads(bwa_out_pipe,filter_out)
-    print >>sys.stderr, "Got HERE 7"
-    # pysam.sort(filter_out,outfile_root)
-    # pysam.sort(filter_out_pipe,outfile_root)
-    print >>sys.stderr, "Got HERE 8"
     #----------------------------------------
-    # sam_view_cmd = ["samtools", "view", "-Su", "-"]
-    # p_sam_view = subprocess.Popen(sam_view_cmd, stdin=p_bwa_mem.stdout, stdout=subprocess.PIPE) #,stderr=errhandle)
-
-    # sam_sort_cmd = ["samtools", "sort", "-",outfile_root]
     sam_sort_cmd = ["samtools", "sort", filter_out,outfile_root]
-    # p_sam_sort = subprocess.Popen(sam_sort_cmd, stdin=p_sam_view.stdout) #,stderr=errhandle)
     p_sam_sort = subprocess.Popen(sam_sort_cmd) #,stderr=errhandle)
-    print >>sys.stderr, "Got HERE 9"
-
-    # p_bwa_mem.stdout.close()
-    # p_sam_view.stdout.close()
-    # p_sam_sort.communicate()[0]
-    # os.remove(bwa_out_pipe)
+    p_sam_sort.communicate()[0]
     return outfile_root+".bam"
 
 ##--------------------------------
@@ -227,65 +194,6 @@ def concatenate_files(outfilename,filelist):
     with open(outfilename, 'w') as fout:
         for line in fileinput.input(filelist):
             fout.write(line)
-
-# make -f bwamem_chimeras.mk all SYNTHETIC="TRUE"  --dry-run
-
-##--------------
-## RUN fastq-mcf
-##--------------
-# fastq-mcf info/illumina_adapter1.fasta synthetic/syn_R1_001.fastq.gz synthetic/syn_R2_001.fastq.gz -o final_fastqs/syn_R1.tmp.gz -o final_fastqs/syn_R2.tmp.gz
-# mv final_fastqs/syn_R1.tmp.gz final_fastqs/syn_R1.trim.fastq.gz
-# mv final_fastqs/syn_R2.tmp.gz final_fastqs/syn_R2.trim.fastq.gz
-# mkdir -p final_fastqs
-
-##--------------
-## RUN fastq-join
-##--------------
-# fastq-join final_fastqs/syn_R1.trim.fastq.gz final_fastqs/syn_R2.trim.fastq.gz -o final_fastqs/syn.%.tmp.gz
-# mv final_fastqs/syn.un1.tmp.gz final_fastqs/syn.un1.fastq.gz
-# mv final_fastqs/syn.un2.tmp.gz final_fastqs/syn.un2.fastq.gz
-# mv final_fastqs/syn.join.tmp.gz final_fastqs/syn.join.fastq.gz
-
-##------------------------
-## INDEX reference genome
-##------------------------
-# bwa index synthetic/syn_concat.fa -p synthetic/syn_concat
-
-##--------------
-## RUN bwa mem
-##--------------
-# mkdir -p bwa
-# bwa mem -t 12 -k 10 synthetic/syn_concat final_fastqs/syn.join.fastq.gz | samtools view -Sb - > bwa/syn.join_TMP
-# mv bwa/syn.join_TMP bwa/syn.join.unsrtbam
-
-# bwa mem -t 12 -k 10 synthetic/syn_concat final_fastqs/syn.un1.fastq.gz final_fastqs/syn.un2.fastq.gz | samtools view -Sb - > bwa/syn.pair_TMP
-# mv bwa/syn.pair_TMP bwa/syn.pair.unsrtbam
-# mkdir -p bwa
-
-##--------------
-## SORT BAM Files
-##--------------
-# samtools sort bwa/syn.join.unsrtbam  bwa/syn.join_TMP
-# mv bwa/syn.join_TMP.bam bwa/syn.join.bam
-# mkdir -p bwa
-# samtools sort bwa/syn.pair.unsrtbam  bwa/syn.pair_TMP
-# mv bwa/syn.pair_TMP.bam bwa/syn.pair.bam
-
-##--------------------------------
-## MERGE pair and joined BAM Files
-##--------------------------------
-# samtools merge bwa/syn.merge.bam bwa/syn.pair.bam bwa/syn.join.bam
-# mkdir -p results
-
-
-##--------------------------------
-## Run extract_chimeras.py
-##--------------------------------
-# python2.7 scripts/extract_chimeras.py bwa/syn.merge.bam --junction results/syn.merge.junc.tmp --fusionreads results/syn.merge.fusread.tmp --insert synthetic/syn_insert.fa
-# mv results/syn.merge.junc.tmp results/syn.merge.junc
-# mv results/syn.merge.fusread.tmp results/syn.merge.fusread
-
-
 
 
 if __name__ == "__main__":

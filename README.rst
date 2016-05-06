@@ -11,7 +11,7 @@ For details see the project website https://github.com/granek/aimhii/
 
 
 
-Changes in v0.5.5: Shifted to github
+Changes in v0.5.5: Added filter_bam.filter_chimeric_reads to pipeline extract only putative junction reads from BWA output. Shifted to hosting on github.
 
 Changes in v0.5.4: Added --plot option to aimhii and shifted a few remaining "prints" to logging
 

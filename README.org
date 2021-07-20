@@ -28,3 +28,7 @@ For details about the input files to AIM-HII, and options see [[running_aimhii.o
 
 Note that in the instructions, text that has ~this formatting~ should be typed at the command line.
 
+* Citation
+If you use AIMHII, please cite the publication: 
+
+Esher SK, Granek JA, Alspaugh JA. Rapid mapping of insertional mutations to probe cell wall regulation in Cryptococcus neoformans. /Fungal Genet Biol/. 2015 Sep;82:9-21. doi: [[https://doi.org/10.1016/j.fgb.2015.06.003][10.1016/j.fgb.2015.06.003]]. Epub 2015 Jun 23. PMID: [[https://pubmed.ncbi.nlm.nih.gov/26112692/][26112692]]; PMCID: [[http://www.ncbi.nlm.nih.gov/pmc/articles/pmc4693612/][PMC4693612]].
